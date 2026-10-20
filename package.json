@@ -1,0 +1,43 @@
+{
+  "name": "routingai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "tsx --env-file=.env scripts/smoke.ts",
+    "check:pages": "tsx --env-file=.env scripts/check-pages.ts",
+    "check:actions": "tsx --env-file=.env scripts/check-actions.ts",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "better-auth": "1.7.11",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "prisma": "6.19.3",
+    "tailwindcss": "^4",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}

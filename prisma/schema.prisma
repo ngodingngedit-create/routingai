@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Auth (Better Auth) ---
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          String   @default("USER") // USER | ADMIN
+  status        String   @default("ACTIVE") // ACTIVE | SUSPENDED
+  credits       Decimal  @default(0) @db.Decimal(18, 6)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  apiKeys     ApiKey[]
+  creditTxs   CreditTx[]
+  orders      Order[]
+  requestLogs RequestLog[]
+
+  @@index([status])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// Dipakai Better Auth untuk rate limit (anti spam signup/login)
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int      @default(0)
+  lastRequest DateTime @default(now())
+}
+
+// --- Katalog model ---
+
+model Provider {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  kind      String // OPENAI_COMPATIBLE | ANTHROPIC | GEMINI | OPENROUTER
+  baseUrl   String
+  apiKeyEnc String // AES-256-GCM
+  keyMask   String // 4 karakter terakhir, untuk ditampilkan di UI
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  models Model[]
+
+  @@index([active])
+}
+
+model Model {
+  id             String   @id @default(cuid())
+  slug           String   @unique // nama yang dipakai di request, mis. "gpt-4o-mini"
+  displayName    String
+  providerId     String
+  provider       Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  upstreamModel  String // nama model di sisi provider
+  priceIn        Decimal  @default(0) @db.Decimal(18, 6) // USD per 1M token input
+  priceOut       Decimal  @default(0) @db.Decimal(18, 6) // USD per 1M token output
+  contextWindow  Int      @default(0)
+  maxOutput      Int      @default(0)
+  capabilities   Json     @default("{}") // { vision: bool, tools: bool, streaming: bool }
+  description    String?
+  enabled        Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  requestLogs RequestLog[]
+
+  @@index([enabled, sortOrder])
+  @@index([providerId])
+}
+
+// --- Kunci API user ---
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String // "sk-rly-ab12" untuk tampilan
+  keyHash    String    @unique // sha256 hex, kunci asli tidak pernah disimpan
+  last4      String
+  status     String    @default("ACTIVE") // ACTIVE | REVOKED
+  rpmLimit   Int       @default(60)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  requestLogs RequestLog[]
+  rateWindows RateWindow[]
+
+  @@index([userId])
+}
+
+model RateWindow {
+  id          String   @id @default(cuid())
+  apiKeyId    String
+  apiKey      ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  windowStart DateTime
+  count       Int      @default(0)
+
+  @@unique([apiKeyId, windowStart])
+  @@index([apiKeyId])
+}
+
+// --- Kredit & order ---
+
+model CreditTx {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String // TOPUP | USAGE | REFUND | ADJUST
+  amount       Decimal  @db.Decimal(18, 6) // negatif untuk pemakaian
+  balanceAfter Decimal  @db.Decimal(18, 6)
+  note         String?
+  requestLogId String?
+  adminId      String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Order {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount     Decimal   @db.Decimal(18, 2) // nominal uang yang dibayar
+  credits    Decimal   @db.Decimal(18, 6) // kredit yang dikreditkan
+  method     String    @default("MANUAL") // MANUAL | MIDTRANS | XENDIT | STRIPE
+  status     String    @default("PENDING") // PENDING | PAID | REJECTED
+  externalId String?
+  note       String?
+  createdAt  DateTime  @default(now())
+  paidAt     DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+// --- Log pemakaian ---
+
+model RequestLog {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId         String?
+  apiKey           ApiKey?  @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  modelId          String?
+  model            Model?   @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  modelSlug        String
+  providerSlug     String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  cost             Decimal  @default(0) @db.Decimal(18, 6) // dalam kredit
+  estimated        Boolean  @default(false)
+  latencyMs        Int      @default(0)
+  status           String   @default("OK") // OK | UPSTREAM_ERROR | REJECTED
+  upstreamStatus   Int?
+  errorMessage     String?
+  streaming        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([modelSlug, createdAt])
+  @@index([createdAt])
+}
+
+// --- Pengaturan aplikasi ---
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --surface-2: #f4f2ed;
+  --line: #e5e2dc;
+  --line-strong: #d3cfc7;
+  --text: #14171a;
+  --muted: #5b636a;
+  --accent: #b03a08;
+  --accent-strong: #8f2e06;
+  --accent-soft: rgba(176, 58, 8, 0.09);
+  --on-accent: #ffffff;
+  --danger: #b42318;
+  --ok: #15803d;
+}
+
+[data-theme="dark"] {
+  --bg: #0c0e10;
+  --surface: #15181b;
+  --surface-2: #1b1f23;
+  --line: #23282d;
+  --line-strong: #333a41;
+  --text: #e9ecee;
+  --muted: #98a2ab;
+  --accent: #ff6a2b;
+  --accent-strong: #ff8a57;
+  --accent-soft: rgba(255, 106, 43, 0.14);
+  --on-accent: #17110c;
+  --danger: #f97066;
+  --ok: #4ade80;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-jetbrains);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+@layer components {
+  .route-line {
+    background-image: linear-gradient(to right, var(--line-strong) 55%, transparent 55%);
+    background-size: 8px 1px;
+    background-repeat: repeat-x;
+  }
+}
