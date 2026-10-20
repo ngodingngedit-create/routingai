@@ -19,8 +19,11 @@ try {
   // andil dari shell
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+});
 const EMAIL = "actions-check@local.test";
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@routingai.local").trim().toLowerCase();
 
 let failures = 0;
 
@@ -39,8 +42,8 @@ async function main() {
     data: { email: EMAIL, name: "Cek Aksi", emailVerified: true, credits: 100 },
   });
   const admin = await prisma.user.upsert({
-    where: { email: "admin@routingai.local" },
-    create: { email: "admin@routingai.local", name: "Admin", emailVerified: true, role: "ADMIN" },
+    where: { email: ADMIN_EMAIL },
+    create: { email: ADMIN_EMAIL, name: "Admin", emailVerified: true, role: "ADMIN" },
     update: { role: "ADMIN" },
   });
 

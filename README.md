@@ -124,10 +124,20 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ### 3. Build command
 
 ```
-prisma migrate deploy && prisma db seed && next build
+prisma generate && prisma migrate deploy && next build
 ```
 
-Migrasi dan seed jalan otomatis tiap deploy. Seed memakai upsert, jadi aman dijalankan berulang.
+`prisma generate` ditulis eksplisit karena cache install Vercel kadang menyimpan Prisma Client versi
+lama. Migrasi jalan otomatis tiap deploy dan idempotent, jadi aman diulang.
+
+Seed tidak dijalankan di build. Seed bersifat idempotent dan hanya mengisi baris awal (provider,
+draft model, pengaturan), jadi cukup dijalankan manual sekali:
+
+```bash
+DIRECT_URL="<direct Neon URL>" DATABASE_URL="<pooled Neon URL>" npm run db:seed
+```
+
+Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build.
 
 ### 4. OAuth untuk domain produksi
 

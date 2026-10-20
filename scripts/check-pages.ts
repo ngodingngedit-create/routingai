@@ -13,10 +13,12 @@ try {
   // andil dari shell
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+});
 
 const BASE_URL = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
-const EMAIL = "admin@routingai.local";
+const EMAIL = (process.env.ADMIN_EMAIL ?? "admin@routingai.local").trim().toLowerCase();
 const COOKIE = "better-auth.session_token";
 
 let failures = 0;
@@ -33,8 +35,8 @@ function check(label: string, condition: boolean, detail?: unknown) {
 async function main() {
   const user = await prisma.user.upsert({
     where: { email: EMAIL },
-    create: { email: EMAIL, name: "Admin Lokal", emailVerified: true, role: "ADMIN", credits: 5000 },
-    update: { role: "ADMIN", status: "ACTIVE", credits: 5000 },
+    create: { email: EMAIL, name: "Admin Lokal", emailVerified: true, role: "ADMIN" },
+    update: { role: "ADMIN", status: "ACTIVE" },
   });
 
   const token = randomBytes(24).toString("hex");

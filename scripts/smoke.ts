@@ -15,7 +15,9 @@ try {
   // .env tidak ada, variabel dari shell dipakai
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+});
 const BASE_URL = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 const USER_EMAIL = "smoke@local.test";
 const MODEL_SLUG = "smoke-mock-model";
