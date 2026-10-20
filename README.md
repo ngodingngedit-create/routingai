@@ -123,21 +123,35 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ### 3. Build command
 
+Build command disimpan di `vercel.json`, jadi bukan lagi diset di dashboard Vercel:
+
 ```
 prisma generate && prisma migrate deploy && next build
 ```
 
 `prisma generate` ditulis eksplisit karena cache install Vercel kadang menyimpan Prisma Client versi
-lama. Migrasi jalan otomatis tiap deploy dan idempotent, jadi aman diulang.
+lama. Migrasi jalan otomatis tiap deploy dan idempotent, jadi aman diulang. Kalau file `vercel.json`
+dan setting dashboard berbeda, yang menang file `vercel.json`.
 
 Seed tidak dijalankan di build. Seed bersifat idempotent dan hanya mengisi baris awal (provider,
 draft model, pengaturan), jadi cukup dijalankan manual sekali:
 
 ```bash
-DIRECT_URL="<direct Neon URL>" DATABASE_URL="<pooled Neon URL>" npm run db:seed
+npm run db:seed
 ```
 
 Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build.
+
+### Troubleshooting
+
+| Gejala di log build | Penyebab | Aksi |
+|---|---|---|
+| `Command failed with exit code 1: tsx prisma/seed.ts` | Seed lewat pooler atau Prisma Client belum ter-generate | Seed manual: `npm run db:seed` |
+| `Environment variable not found: DIRECT_URL` | Env var Vercel belum lengkap | Isi `DIRECT_URL` di Project Settings |
+| `Environment variable not found: DATABASE_URL` | `DATABASE_URL` belum diisi | Isi di Project Settings |
+| `Can't reach database server` | Kredensial atau jaringan ke Neon bermasalah | Cek `curl https://domain-anda.vercel.app/api/health` |
+| `P1001 Can't reach database server at ...` | Region Vercel jauh dari region Neon | Tidak fatal, tapi bisa lambat |
+| Halaman 500 tanpa pesan | Error runtime, cek Function Logs | `/api/health` menunjuk env var mana yang kurang |
 
 ### 4. OAuth untuk domain produksi
 
