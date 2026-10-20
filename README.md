@@ -82,6 +82,70 @@ Role juga bisa diubah dari panel admin.
 Model tanpa harga tidak bisa dipakai, dan katalog menandainya "belum diatur" supaya tidak ada biaya
 yang tidak jelas.
 
+## Deploy ke Vercel
+
+### 1. Database di Neon
+
+Buat project di Neon, lalu dari menu **Connect** ambil dua connection string:
+
+| Yang dipakai | Untuk | Bentuk |
+|---|---|---|
+| Pooled | `DATABASE_URL` (runtime) | `postgresql://USER:PASS@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require` |
+| Direct | `DIRECT_URL` (migrasi) | `postgresql://USER:PASS@ep-xxx.region.aws.neon.tech/neondb?sslmode=require` |
+
+Direct URL wajib karena `prisma migrate deploy` tidak boleh lewat pooler.
+
+### 2. Environment variables di Vercel
+
+Isi untuk Production, Preview, dan Development:
+
+```
+DATABASE_URL         = <pooled Neon URL>
+DIRECT_URL           = <direct Neon URL>
+BETTER_AUTH_SECRET   = <32 byte random>
+BETTER_AUTH_URL      = https://domain-anda.vercel.app
+GOOGLE_CLIENT_ID     = <dari OAuth client>
+GOOGLE_CLIENT_SECRET = <dari OAuth client>
+APP_ENCRYPTION_KEY   = <64 hex random>
+ADMIN_EMAIL          = <email Google kamu>
+```
+
+`BETTER_AUTH_URL` harus sama persis dengan domain produksi tanpa trailing slash, kalau tidak callback
+OAuth diarahkan ke localhost. `ADMIN_EMAIL` menentukan siapa yang otomatis dapat role ADMIN saat login
+pertama.
+
+Buat secret dengan:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 3. Build command
+
+```
+prisma migrate deploy && prisma db seed && next build
+```
+
+Migrasi dan seed jalan otomatis tiap deploy. Seed memakai upsert, jadi aman dijalankan berulang.
+
+### 4. OAuth untuk domain produksi
+
+Di OAuth client Google, tambahkan:
+
+- Authorized JavaScript origins: `https://domain-anda.vercel.app`
+- Authorized redirect URIs: `https://domain-anda.vercel.app/api/auth/callback/google`
+
+### 5. Cek hasil deploy
+
+```bash
+curl https://domain-anda.vercel.app/api/health
+```
+
+`ok: true` berarti semua env var lengkap dan database terjangkau. Kalau `ok: false`, field `missing`
+menunjuk env var yang belum diisi dan field `db` menjelaskan masalah koneksi. Endpoint ini hanya
+menampilkan nama variabel, tidak pernah nilainya.
+
 ## Memakai API
 
 ```bash
