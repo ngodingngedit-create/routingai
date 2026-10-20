@@ -165,6 +165,28 @@ Kalau database-nya diganti (misal pindah ke project Neon baru dari integrasi Ver
 4. Verifikasi `curl https://domain-anda.vercel.app/api/health`. `db.missingTables` harus kosong,
    `db.migrations` berisi 2 nama migration, dan `targets.sameTarget` harus `true`.
 
+### Prisma Postgres
+
+Integrasi Prisma Postgres (marketplace Vercel) punya dua URL dengan syarat berbeda:
+
+| Dipakai untuk | Syarat param |
+|---|---|
+| `DATABASE_URL` (runtime) | `?sslmode=require&pgbouncer=true&connection_limit=1` |
+| `DIRECT_URL` (migrasi, seed) | `?sslmode=require` saja, **tanpa** `pgbouncer` |
+
+Runtime tanpa `pgbouncer=true` gagal dengan error `prepared statements`. Direct URL dengan
+`pgbouncer=true` gagal dengan error pooler. `npm run db:info -- "<url>"` prints mode dan param-nya
+supaya tidak salah set.
+
+Struktur env var yang dipakai integrasi ini:
+
+```
+PRISMA_DATABASE_URL = postgres://USER:PASS@db.prisma.io:5432/postgres?sslmode=require   # direct
+POSTGRES_URL        = postgres://USER:PASS@db.prisma.io:5432/postgres?sslmode=require   # direct
+```
+
+`DATABASE_URL` untuk runtime adalah URL yang sama ditambah `&pgbouncer=true&connection_limit=1`.
+
 ### 4. OAuth untuk domain produksi
 
 Di OAuth client Google, tambahkan:

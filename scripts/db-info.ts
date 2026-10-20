@@ -32,6 +32,16 @@ async function main() {
   console.log("database :", parsed.pathname.replace(/^\//, "") || "postgres");
   console.log("port     :", parsed.port || "5432");
   console.log("user     :", parsed.username ? decodeURIComponent(parsed.username) : "");
+  const params = [...parsed.searchParams.entries()].map(([key, value]) => `${key}=${value}`);
+  console.log("params   :", params.length > 0 ? params.join(" ") : "(tidak ada)");
+
+  const pooled = parsed.searchParams.get("pgbouncer") === "true";
+  console.log("mode     :", pooled ? "pooled (pgbouncer)" : "direct");
+  if (parsed.hostname.includes("db.prisma.io") && !pooled) {
+    console.log(
+      "catatan  : untuk runtime pakai URL pooled Prisma Postgres, tambahkan pgbouncer=true&connection_limit=1. URL ini untuk migrasi dan operasi admin.",
+    );
+  }
 
   const prisma = new PrismaClient({ datasourceUrl: target });
   try {
