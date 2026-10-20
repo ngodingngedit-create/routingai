@@ -150,8 +150,20 @@ Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build
 | `Environment variable not found: DIRECT_URL` | Env var Vercel belum lengkap | Isi `DIRECT_URL` di Project Settings |
 | `Environment variable not found: DATABASE_URL` | `DATABASE_URL` belum diisi | Isi di Project Settings |
 | `Can't reach database server` | Kredensial atau jaringan ke Neon bermasalah | Cek `curl https://domain-anda.vercel.app/api/health` |
-| `P1001 Can't reach database server at ...` | Region Vercel jauh dari region Neon | Tidak fatal, tapi bisa lambat |
+| Halaman 500 dengan `The table public.Model does not exist` | `DATABASE_URL` dan `DIRECT_URL` menunjuk project atau database yang berbeda | Samakan keduanya, lalu `npm run db:deploy` |
 | Halaman 500 tanpa pesan | Error runtime, cek Function Logs | `/api/health` menunjuk env var mana yang kurang |
+
+### Ganti project database
+
+Kalau database-nya diganti (misal pindah ke project Neon baru dari integrasi Vercel):
+
+1. Isi `DATABASE_URL` (pooled) dan `DIRECT_URL` (direct) di Vercel dengan **project dan database yang
+   sama**. `npm run db:info -- "<url>"` dipakai untuk memastikan tanpa deploy.
+2. Redeploy. Build menjalankan `prisma migrate deploy` memakai `DIRECT_URL`, jadi schema ke-create
+   otomatis di database itu.
+3. Seed sekali di database yang sama: arahkan `.env` ke URL baru, lalu `npm run db:seed`.
+4. Verifikasi `curl https://domain-anda.vercel.app/api/health`. `db.missingTables` harus kosong,
+   `db.migrations` berisi 2 nama migration, dan `targets.sameTarget` harus `true`.
 
 ### 4. OAuth untuk domain produksi
 

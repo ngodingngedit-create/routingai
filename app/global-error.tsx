@@ -46,11 +46,13 @@ export default function GlobalError({
           </h1>
           <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#98A2AB" }}>
             Penyebab yang paling sering: <code>DATABASE_URL</code> belum diisi di environment
-            deployment, atau migrasi database belum dijalankan. Cek{" "}
+            deployment, atau <code>DIRECT_URL</code> menunjuk database lain sehingga migrasi tidak
+            pernah jalan. Cek{" "}
             <a href="/api/health" style={{ color: "#FF6A2B" }}>
               /api/health
             </a>{" "}
-            untuk melihat env var mana yang belum ada.
+            untuk melihat env var mana yang belum ada, database mana yang dipakai, dan tabel apa yang
+            belum terpasang.
           </p>
           {error.digest ? (
             <p style={{ margin: "12px 0 0", fontSize: 12, color: "#6B747C" }}>Digest: {error.digest}</p>
