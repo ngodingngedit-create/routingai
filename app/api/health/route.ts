@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { describeUrl, isSameTarget } from "@/lib/db-target";
+import { collectDeployWarnings } from "@/lib/deploy-checks";
 
 export const dynamic = "force-dynamic";
 
@@ -33,13 +34,15 @@ const APP_TABLES = [
   "Setting",
 ];
 
-export async function GET() {
+export async function GET(request: Request) {
   const env: Record<string, boolean> = {};
   for (const key of [...REQUIRED_ENV, ...RECOMMENDED_ENV]) env[key] = Boolean(process.env[key]);
 
+  const authUrl = process.env.BETTER_AUTH_URL;
   const runtimeTarget = describeUrl(process.env.DATABASE_URL);
   const migrationTarget = describeUrl(process.env.DIRECT_URL);
   const sameTarget = isSameTarget(runtimeTarget, migrationTarget);
+  const requestHost = request.headers.get("host") ?? undefined;
 
   const db: {
     reachable: boolean;
@@ -92,14 +95,26 @@ export async function GET() {
   const missing = REQUIRED_ENV.filter((key) => !env[key]);
   const recommendedMissing = RECOMMENDED_ENV.filter((key) => !env[key]);
 
-  const ok = db.reachable && missing.length === 0 && db.missingTables.length === 0;
+  const warnings = collectDeployWarnings({
+    authUrl,
+    runtimeTarget,
+    migrationTarget,
+    sameTarget,
+    requestHost,
+  });
+
+  const ok = db.reachable && missing.length === 0 && db.missingTables.length === 0 && warnings.length === 0;
 
   return Response.json(
     {
       ok,
       missing,
       recommendedMissing,
+      warnings,
       env,
+      config: {
+        BETTER_AUTH_URL: authUrl ?? null,
+      },
       db,
       targets: {
         DATABASE_URL: runtimeTarget,

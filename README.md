@@ -156,6 +156,42 @@ Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build
 | `redirect_uri_mismatch` dari Google | Redirect URI domain produksi belum terdaftar di OAuth client | Tambah `https://domain-anda.vercel.app/api/auth/callback/google` di Google Cloud Console |
 | Halaman 500 tanpa pesan | Error runtime, cek Function Logs | `/api/health` menunjuk env var mana yang kurang |
 
+### Checklist OAuth consent screen
+
+Login Google gagal dengan "doesn't comply with Google's OAuth 2.0 policy" kalau konfigurasi consent
+screen tidak valid. Yang wajib dicek:
+
+| Field | Isi |
+|---|---|
+| Application home page URL | domain publik yang benar-benar bisa diakses, contoh `https://routingai.vercel.app` |
+| Privacy policy URL | `https://routingai.vercel.app/privacy` |
+| Terms of service URL | `https://routingai.vercel.app/terms` |
+| Support email | email yang kamu pegang |
+| Developer contact email | email yang kamu pegang |
+| Publishing status | Publish, atau tambah akun sebagai Test user |
+
+Dua aturan yang sering bikin gagal:
+
+- **Jangan pakai domain yang tidak resolve.** Kalau home page menunjuk domain yang belum ada DNS-nya,
+  Google menganggap app tidak memenuhi policy dan memblokir login dengan `400 invalid_request`.
+- Scope yang dipakai aplikasi ini cuma `email profile openid`. Itu scope dasar, jadi **tidak perlu
+  verifikasi Google**; cukup Publish.
+
+Redirect URI di OAuth client harus persis sama dengan domain produksi, formatnya:
+`https://domain-anda/api/auth/callback/google`.
+
+### Checklist env var produksi
+
+| Env var | Isi yang benar |
+|---|---|
+| `BETTER_AUTH_URL` | domain publik aplikasi, tanpa trailing slash. Kalau masih localhost, login produksi tidak akan selesai |
+| `DATABASE_URL` | connection string pooled dari database yang sama dengan `DIRECT_URL` |
+| `DIRECT_URL` | connection string direct dari database yang sama, dipakai `prisma migrate deploy` |
+| `BETTER_AUTH_SECRET` | 32 byte random, nilai sama untuk semua instance |
+| `APP_ENCRYPTION_KEY` | 64 hex char random, jangan pernah diganti setelah kredensial provider disimpan |
+
+`GET /api/health` memeriksa semua ini dan mengembalikan array `warnings` kalau ada yang tidak beres.
+
 ### Mengakses dan mengubah data database
 
 Empat cara, urut dari yang paling disarankan:
