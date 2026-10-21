@@ -186,6 +186,35 @@ Logo untuk di-upload ke consent screen sudah ada di repo: `public/logo-512.png` 
 Redirect URI di OAuth client harus persis sama dengan domain produksi, formatnya:
 `https://domain-anda/api/auth/callback/google`.
 
+### Aturan menempel env var
+
+Nilai env var yang dipaste dari chat atau terminal sering membawa **newline atau spasi di akhir**. Google
+lalu menolak dengan `Error 400: invalid_request` karena `redirect_uri` jadi tidak valid. Dua cara
+menghindarinya:
+
+- Ketik ulang nilainya manual di dashboard Vercel, lalu tekan `End` dan pastikan tidak ada sisa
+  karakter di belakang.
+- Cek lewat `GET /api/health`. Field `warnings` memuat `env_value_whitespace` kalau ada env var yang
+  punya spasi atau newline di awal/akhir. Aplikasi juga men-trim sendiri nilai yang dipakai, jadi
+  whitespace tidak lagi mematikan login, tapi tetap perlu dibersihkan.
+
+### Env var yang terkunci integrasi
+
+Integrasi Prisma Postgres di Vercel membuat `DATABASE_URL`, `POSTGRES_URL`, dan
+`PRISMA_DATABASE_URL` sebagai env var terkunci, jadi tidak bisa diedit dari dashboard. Tiga pilihan:
+
+1. **Biarkan apa adanya (recommended).** `db.prisma.io` bukan PgBouncer, jadi parameter
+   `pgbouncer=true` tidak relevan untuk Prisma Postgres. Yang butuh perhatian adalah cold start:
+   compute Prisma Postgres suspend saat idle, dan koneksi pertama bisa melewati batas 10 detik default
+   Prisma lalu gagal dengan `Can't reach database server`. Aplikasi sudah menambahkan
+   `connect_timeout=20` sendiri ke connection string runtime, jadi tidak perlu mengubah env var.
+2. **Disconnect integrasi** kalau memang mau mengedit nilainya: Vercel → Project → Storage → Prisma
+   Postgres → menu ⋮ → Disconnect. Cek dulu di dashboard Prisma bahwa database-nya masih ada.
+   Setelah disconnect, `DATABASE_URL` bisa diedit manual.
+3. **Pakai nama env var sendiri** supaya tidak kena lock: buat `PRISMA_POOLED_URL` di Vercel, lalu
+   ubah `url = env("PRISMA_POOLED_URL")` di `prisma/schema.prisma`. Konsekuensinya, semua dokumentasi
+   dan `.env.example` harus ikut disesuaikan.
+
 ### Checklist env var produksi
 
 | Env var | Isi yang benar |
@@ -197,6 +226,7 @@ Redirect URI di OAuth client harus persis sama dengan domain produksi, formatnya
 | `APP_ENCRYPTION_KEY` | 64 hex char random, jangan pernah diganti setelah kredensial provider disimpan |
 
 `GET /api/health` memeriksa semua ini dan mengembalikan array `warnings` kalau ada yang tidak beres.
+Array `recommendations` berisi saran yang tidak membuat deploy gagal.
 
 ### Mengakses dan mengubah data database
 

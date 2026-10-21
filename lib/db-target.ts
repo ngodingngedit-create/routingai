@@ -45,3 +45,21 @@ export function isSameTarget(
   if (!runtime || !migration) return null;
   return runtime.project === migration.project && runtime.database === migration.database;
 }
+
+/** Default 20 detik, cukup untuk Prisma Postgres yang lagi bangun dari mode suspend. */
+export const DEFAULT_CONNECT_TIMEOUT_SECONDS = 20;
+
+/**
+ * Menambah connect_timeout ke connection string kalau belum ada.
+ * Prisma Postgres suspend compute saat idle, dan koneksi pertama bisa melewati
+ * batas 10 detik default Prisma lalu gagal dengan "Can't reach database server".
+ */
+export function withConnectTimeout(
+  url: string,
+  seconds: number = DEFAULT_CONNECT_TIMEOUT_SECONDS,
+): string {
+  if (!url) return url;
+  if (/[?&]connect_timeout=/.test(url)) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}connect_timeout=${seconds}`;
+}

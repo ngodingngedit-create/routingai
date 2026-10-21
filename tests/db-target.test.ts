@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeUrl, isSameTarget, normalizeHost } from "@/lib/db-target";
+import { describeUrl, isSameTarget, normalizeHost, withConnectTimeout } from "@/lib/db-target";
 
 const POOLED =
   "postgresql://user:pass@ep-abc-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -69,5 +69,31 @@ describe("isSameTarget", () => {
   it("mengembalikan null kalau salah satu URL tidak ada", () => {
     expect(isSameTarget(describeUrl(POOLED), null)).toBeNull();
     expect(isSameTarget(null, null)).toBeNull();
+  });
+});
+
+describe("withConnectTimeout", () => {
+  it("menambah connect_timeout dengan pemisah yang benar", () => {
+    expect(withConnectTimeout("postgres://user@host/db?sslmode=require")).toBe(
+      "postgres://user@host/db?sslmode=require&connect_timeout=20",
+    );
+    expect(withConnectTimeout("postgres://user@host/db")).toBe(
+      "postgres://user@host/db?connect_timeout=20",
+    );
+  });
+
+  it("tidak menimpa connect_timeout yang sudah ada", () => {
+    const url = "postgres://user@host/db?sslmode=require&connect_timeout=45";
+    expect(withConnectTimeout(url)).toBe(url);
+  });
+
+  it("menghormati nilai detik khusus", () => {
+    expect(withConnectTimeout("postgres://user@host/db", 5)).toBe(
+      "postgres://user@host/db?connect_timeout=5",
+    );
+  });
+
+  it("mengembalikan URL kosong tanpa perubahan", () => {
+    expect(withConnectTimeout("")).toBe("");
   });
 });

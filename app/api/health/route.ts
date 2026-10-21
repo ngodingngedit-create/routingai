@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { describeUrl, isSameTarget } from "@/lib/db-target";
-import { collectDeployWarnings } from "@/lib/deploy-checks";
+import { collectDeployRecommendations, collectDeployWarnings } from "@/lib/deploy-checks";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,15 @@ export async function GET(request: Request) {
   const migrationTarget = describeUrl(process.env.DIRECT_URL);
   const sameTarget = isSameTarget(runtimeTarget, migrationTarget);
   const requestHost = request.headers.get("host") ?? undefined;
+
+  const envValues: Record<string, string | undefined> = {
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  };
 
   const db: {
     reachable: boolean;
@@ -101,6 +110,16 @@ export async function GET(request: Request) {
     migrationTarget,
     sameTarget,
     requestHost,
+    envValues,
+  });
+
+  const recommendations = collectDeployRecommendations({
+    authUrl,
+    runtimeTarget,
+    migrationTarget,
+    sameTarget,
+    requestHost,
+    envValues,
   });
 
   const ok = db.reachable && missing.length === 0 && db.missingTables.length === 0 && warnings.length === 0;
@@ -111,6 +130,7 @@ export async function GET(request: Request) {
       missing,
       recommendedMissing,
       warnings,
+      recommendations,
       env,
       config: {
         BETTER_AUTH_URL: authUrl ?? null,

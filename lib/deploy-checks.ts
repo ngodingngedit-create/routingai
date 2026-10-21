@@ -5,12 +5,19 @@ export type DeployWarning = {
   message: string;
 };
 
+export type DeployRecommendation = {
+  code: string;
+  message: string;
+};
+
 export type DeployCheckInput = {
   authUrl: string | undefined;
   runtimeTarget: UrlTarget | null;
   migrationTarget: UrlTarget | null;
   sameTarget: boolean | null;
   requestHost?: string;
+  /** Nilai mentah env var, sebelum di-trim. Dipakai untuk mendeteksi sisa spasi atau newline. */
+  envValues?: Record<string, string | undefined>;
 };
 
 function isLocalHost(url: string): boolean {
@@ -42,10 +49,19 @@ function isLocalRequest(requestHost?: string): boolean {
 
 /**
  * Peringatan konfigurasi deployment yang bikin login atau migrasi gagal.
- * Semua Rules hanya membaca nilai yang tidak rahasia.
+ * Semua rules hanya membaca nilai yang tidak rahasia.
  */
 export function collectDeployWarnings(input: DeployCheckInput): DeployWarning[] {
   const warnings: DeployWarning[] = [];
+
+  for (const [name, value] of Object.entries(input.envValues ?? {})) {
+    if (value && value !== value.trim()) {
+      warnings.push({
+        code: "env_value_whitespace",
+        message: `${name} punya spasi atau newline di awal/akhir. Nilai "${value}" akan merusak URL callback OAuth dan harus diketik ulang tanpa sisa whitespace.`,
+      });
+    }
+  }
 
   if (!input.authUrl) {
     warnings.push({
@@ -84,18 +100,6 @@ export function collectDeployWarnings(input: DeployCheckInput): DeployWarning[] 
     });
   }
 
-  if (
-    input.runtimeTarget &&
-    input.runtimeTarget.host.includes("db.prisma.io") &&
-    input.runtimeTarget.params.pgbouncer !== "true"
-  ) {
-    warnings.push({
-      code: "pooler_params_missing",
-      message:
-        "DATABASE_URL untuk Prisma Postgres butuh pgbouncer=true dan connection_limit=1, tanpa itu tiap instance serverless membuka koneksi sendiri.",
-    });
-  }
-
   if (input.runtimeTarget && !input.migrationTarget) {
     warnings.push({
       code: "direct_url_missing",
@@ -105,4 +109,22 @@ export function collectDeployWarnings(input: DeployCheckInput): DeployWarning[] 
   }
 
   return warnings;
+}
+
+/** Saran yang tidak bikin deploy gagal, tapi bagus dikerjakan. */
+export function collectDeployRecommendations(
+  input: DeployCheckInput,
+): DeployRecommendation[] {
+  const recommendations: DeployRecommendation[] = [];
+
+  const rawUrl = input.envValues?.DATABASE_URL;
+  if (rawUrl && !/[?&]connect_timeout=/.test(rawUrl)) {
+    recommendations.push({
+      code: "connect_timeout_missing",
+      message:
+        "DATABASE_URL tanpa connect_timeout. Prisma Postgres suspend compute saat idle, koneksi pertama bisa melewati batas 10 detik default Prisma lalu gagal dengan 'Can't reach database server'. Aplikasi sudah menambahkan connect_timeout sendiri, jadi ini hanya catatan.",
+    });
+  }
+
+  return recommendations;
 }

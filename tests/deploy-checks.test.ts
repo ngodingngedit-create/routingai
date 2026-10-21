@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectDeployWarnings } from "@/lib/deploy-checks";
+import { collectDeployRecommendations, collectDeployWarnings } from "@/lib/deploy-checks";
 import { describeUrl } from "@/lib/db-target";
 
 const POOLED_PRISMA =
@@ -71,21 +71,55 @@ describe("collectDeployWarnings", () => {
         runtimeTarget: describeUrl("postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require"),
       }),
     );
-    expect(warnings.map((w) => w.code)).toContain("pooler_params_missing");
+    expect(warnings.map((w) => w.code)).not.toContain("pooler_params_missing");
   });
 
-  it("tidak menandai param pooler untuk host selain Prisma Postgres", () => {
+  it("menandai env var yang punya spasi atau newline di akhir", () => {
     const warnings = collectDeployWarnings(
       baseInput({
-        runtimeTarget: describeUrl(
-          "postgresql://user:pass@ep-abc-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
-        ),
-        migrationTarget: describeUrl(
-          "postgresql://user:pass@ep-abc.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
-        ),
+        envValues: { BETTER_AUTH_URL: "https://routingai.vercel.app\n" },
       }),
     );
-    expect(warnings.map((w) => w.code)).not.toContain("pooler_params_missing");
+    expect(warnings.map((w) => w.code)).toContain("env_value_whitespace");
+    expect(warnings[0].message).toContain("BETTER_AUTH_URL");
+  });
+
+  it("tidak menandai env var yang bersih", () => {
+    const warnings = collectDeployWarnings(
+      baseInput({
+        envValues: { BETTER_AUTH_URL: "https://routingai.vercel.app" },
+      }),
+    );
+    expect(warnings.map((w) => w.code)).not.toContain("env_value_whitespace");
+  });
+});
+
+describe("collectDeployRecommendations", () => {
+  it("menyarankan connect_timeout kalau DATABASE_URL belum punya", () => {
+    const recommendations = collectDeployRecommendations(
+      baseInput({
+        envValues: { DATABASE_URL: "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require" },
+      }),
+    );
+    expect(recommendations.map((r) => r.code)).toContain("connect_timeout_missing");
+  });
+
+  it("tidak menyarankan kalau connect_timeout sudah ada", () => {
+    const recommendations = collectDeployRecommendations(
+      baseInput({
+        envValues: {
+          DATABASE_URL: "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require&connect_timeout=20",
+        },
+      }),
+    );
+    expect(recommendations.map((r) => r.code)).not.toContain("connect_timeout_missing");
+  });
+
+  it("tidak memberi rekomendasi kalau tidak ada DATABASE_URL", () => {
+    const recommendations = collectDeployRecommendations(
+      baseInput({ envValues: { DATABASE_URL: undefined } }),
+    );
+    expect(recommendations).toEqual([]);
   });
 
   it("menandai DIRECT_URL yang belum diisi", () => {
