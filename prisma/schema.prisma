@@ -78,12 +78,13 @@ model Verification {
   @@index([identifier])
 }
 
-// Dipakai Better Auth untuk rate limit (anti spam signup/login)
+// Dipakai Better Auth untuk rate limit (anti spam signup/login).
+// lastRequest adalah epoch milidetik (BigInt), bukan DateTime, karena itu yang ditulis Better Auth.
 model RateLimit {
   id          String   @id @default(cuid())
   key         String   @unique
   count       Int      @default(0)
-  lastRequest DateTime @default(now())
+  lastRequest BigInt   @default(0)
 }
 
 // --- Katalog model ---

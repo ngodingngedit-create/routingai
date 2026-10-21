@@ -30,6 +30,18 @@ describe("describeUrl", () => {
     expect(JSON.stringify(target)).not.toContain("pass");
   });
 
+  it("hanya menampilkan param yang aman", () => {
+    const target = describeUrl(
+      "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require&pgbouncer=true&connection_limit=1&password=rahasia",
+    );
+    expect(target?.params).toEqual({
+      sslmode: "require",
+      pgbouncer: "true",
+      connection_limit: "1",
+    });
+    expect(JSON.stringify(target)).not.toContain("rahasia");
+  });
+
   it("mengembalikan null untuk URL rusak atau kosong", () => {
     expect(describeUrl("bukan-url")).toBeNull();
     expect(describeUrl("")).toBeNull();

@@ -151,7 +151,39 @@ Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build
 | `Environment variable not found: DATABASE_URL` | `DATABASE_URL` belum diisi | Isi di Project Settings |
 | `Can't reach database server` | Kredensial atau jaringan ke Neon bermasalah | Cek `curl https://domain-anda.vercel.app/api/health` |
 | Halaman 500 dengan `The table public.Model does not exist` | `DATABASE_URL` dan `DIRECT_URL` menunjuk project atau database yang berbeda | Samakan keduanya, lalu `npm run db:deploy` |
+| Halaman 500 dengan `Invalid lastRequest: Expected DateTime, provided Int` | Kolom `RateLimit.lastRequest` harus `BigInt` (epoch milidetik), bukan `DateTime` | `npm run db:deploy` dengan skema terbaru |
+| Login Google balas 500 | Rate limit database gagal menulis, atau `BETTER_AUTH_URL` salah | `curl -X POST <domain>/api/auth/sign-in/social` untuk melihat redirect_uri yang dipakai |
+| `redirect_uri_mismatch` dari Google | Redirect URI domain produksi belum terdaftar di OAuth client | Tambah `https://domain-anda.vercel.app/api/auth/callback/google` di Google Cloud Console |
 | Halaman 500 tanpa pesan | Error runtime, cek Function Logs | `/api/health` menunjuk env var mana yang kurang |
+
+### Mengakses dan mengubah data database
+
+Empat cara, urut dari yang paling disarankan:
+
+1. **Panel admin aplikasi** (`/admin`). Ini cara yang benar untuk operasional harian: kunci provider,
+   harga model, peran user, saldo, order, dan pengaturan. Setiap perubahan saldo tercatat di tabel
+   `CreditTx`, jadi riwayat dan saldo tidak pernah beda.
+2. **Prisma Studio dari mesin ini** untuk browse dan edit tabel:
+   ```bash
+   npm run db:studio
+   ```
+   Script ini memaksa koneksi direct, bukan pooled, karena Studio butuh koneksi stabil. Terbuka di
+   `http://localhost:5555`.
+3. **SQL client** seperti psql, DBeaver, atau TablePlus, memakai direct URL:
+   ```bash
+   psql "postgres://USER:PASS@db.prisma.io:5432/postgres?sslmode=require"
+   ```
+4. **Dashboard Prisma Postgres**: Vercel → Storage → Prisma Postgres → Open Dashboard. Untuk melihat
+   data, usage, rotasi password, dan reset database.
+
+Catatan: mengubah saldo lewat SQL langsung melewati ledger `CreditTx`, jadi riwayat kredit user
+jadi tidak sinkron dengan saldo. Untuk saldo selalu lewat panel admin.
+
+Cek identitas database tanpa perlu konek ke app:
+
+```bash
+npm run db:info -- "<connection-string>"
+```
 
 ### Ganti project database
 
