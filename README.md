@@ -165,10 +165,12 @@ Empat cara, urut dari yang paling disarankan:
    `CreditTx`, jadi riwayat dan saldo tidak pernah beda.
 2. **Prisma Studio dari mesin ini** untuk browse dan edit tabel:
    ```bash
-   npm run db:studio
+   npm run db:studio           # database produksi, koneksi direct
+   npm run db:studio:backup    # database cadangan, dari BACKUP_DATABASE_URL
    ```
    Script ini memaksa koneksi direct, bukan pooled, karena Studio butuh koneksi stabil. Terbuka di
-   `http://localhost:5555`.
+   `http://localhost:5555`. `db:studio` mengedit data produksi, jadi tutup Studio setelah selesai dan
+   jangan mengubah `User.credits` serta `CreditTx` manual, karena itu merusak ledger kredit.
 3. **SQL client** seperti psql, DBeaver, atau TablePlus, memakai direct URL:
    ```bash
    psql "postgres://USER:PASS@db.prisma.io:5432/postgres?sslmode=require"

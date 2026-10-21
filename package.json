@@ -18,6 +18,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:info": "tsx scripts/db-info.ts",
     "db:studio": "tsx scripts/studio.ts",
+    "db:studio:backup": "tsx scripts/studio.ts BACKUP_DATABASE_URL",
     "db:studio": "prisma studio"
   },
   "prisma": {
