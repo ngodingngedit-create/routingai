@@ -166,16 +166,22 @@ screen tidak valid. Yang wajib dicek:
 | Application home page URL | domain publik yang benar-benar bisa diakses, contoh `https://routingai.vercel.app` |
 | Privacy policy URL | `https://routingai.vercel.app/privacy` |
 | Terms of service URL | `https://routingai.vercel.app/terms` |
+| App logo | upload file PNG langsung, contoh `public/logo-512.png`. Jangan pakai URL ke domain mati |
 | Support email | email yang kamu pegang |
 | Developer contact email | email yang kamu pegang |
 | Publishing status | Publish, atau tambah akun sebagai Test user |
+| Scopes | hanya `email`, `profile`, `openid` |
 
 Dua aturan yang sering bikin gagal:
 
 - **Jangan pakai domain yang tidak resolve.** Kalau home page menunjuk domain yang belum ada DNS-nya,
   Google menganggap app tidak memenuhi policy dan memblokir login dengan `400 invalid_request`.
-- Scope yang dipakai aplikasi ini cuma `email profile openid`. Itu scope dasar, jadi **tidak perlu
-  verifikasi Google**; cukup Publish.
+- **Hanya pakai scope dasar.** Scope `email`, `profile`, `openid` tidak butuh verifikasi Google. Kalau
+  ada scope sensitif lain (Drive, Gmail, Calendar), app wajib diverifikasi dan login bisa ditolak
+  dengan pesan policy.
+
+Logo untuk di-upload ke consent screen sudah ada di repo: `public/logo-512.png` dan
+`public/logo-96.png`. Favicon browser memakai `app/icon.svg` yang memakai motif yang sama.
 
 Redirect URI di OAuth client harus persis sama dengan domain produksi, formatnya:
 `https://domain-anda/api/auth/callback/google`.
@@ -332,6 +338,7 @@ Kode error: `401 invalid_api_key`, `402 insufficient_credits`, `404 model_not_fo
 
 ```
 app/
+  icon.svg                  favicon browser, motif route line
   page.tsx                 homepage, katalog dan data nyata dari database
   models/                  katalog model publik dan detail model
   docs/                    panduan pakai kunci
@@ -341,6 +348,7 @@ app/
   v1/                      endpoint API publik (chat/completions, models, usage)
   api/auth/                Better Auth (login Google)
 components/                komponen UI dan form
+public/                    logo untuk di-upload ke OAuth consent screen
 lib/
   auth.ts                  konfigurasi Better Auth, rate limit, aturan daftar
   billing.ts               perhitungan biaya dari token
