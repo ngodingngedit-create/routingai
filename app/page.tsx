@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { formatCredits, formatUsdPerMillion } from "@/lib/format";
+import { getApiBaseUrl } from "@/lib/public-url";
 import { modelHref } from "@/lib/slug";
 import { buttonClass, Code, EmptyState } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
@@ -27,7 +28,7 @@ const FAQ = [
   {
     question: "Bisa pakai SDK OpenAI atau kode saya yang sekarang?",
     answer:
-      "Bisa. Arahkan base_url ke https://domain-anda/v1 dan pakai kunci RoutingAI sebagai api_key. Format request dan respons mengikuti OpenAI Chat Completions, termasuk mode streaming.",
+      "Bisa. Arahkan base_url ke base URL yang tertera di panel kunci API, lalu pakai kunci RoutingAI sebagai api_key. Format request dan respons mengikuti OpenAI Chat Completions, termasuk mode streaming.",
   },
   {
     question: "Kenapa harus login dengan Google?",
@@ -42,7 +43,7 @@ const FAQ = [
 ];
 
 export default async function HomePage() {
-  const [models, providers, settings] = await Promise.all([
+  const [models, providers, settings, baseUrl] = await Promise.all([
     prisma.model.findMany({
       where: { enabled: true, provider: { active: true } },
       include: { provider: true },
@@ -51,9 +52,10 @@ export default async function HomePage() {
     }),
     prisma.provider.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     getSettings(),
+    getApiBaseUrl(),
   ]);
 
-  const curl = `curl https://domain-anda/v1/chat/completions \\
+  const curl = `curl ${baseUrl}/chat/completions \\
   -H "Authorization: Bearer sk-rly-..." \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -64,7 +66,7 @@ export default async function HomePage() {
   const sdk = `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://domain-anda/v1",
+    base_url="${baseUrl}",
     api_key="sk-rly-...",
 )
 

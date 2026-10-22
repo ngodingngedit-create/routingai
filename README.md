@@ -103,12 +103,17 @@ Isi untuk Production, Preview, dan Development:
 DATABASE_URL         = <pooled Neon URL>
 DIRECT_URL           = <direct Neon URL>
 BETTER_AUTH_SECRET   = <32 byte random>
-BETTER_AUTH_URL      = https://domain-anda.vercel.app
+BETTER_AUTH_URL      = https://routingai.vercel.app
 GOOGLE_CLIENT_ID     = <dari OAuth client>
 GOOGLE_CLIENT_SECRET = <dari OAuth client>
 APP_ENCRYPTION_KEY   = <64 hex random>
 ADMIN_EMAIL          = <email Google kamu>
+APP_URL              = https://routingai.vercel.app   (opsional, override)
 ```
+
+`APP_URL` mengunci base URL yang tampil di docs, homepage, dan panel kunci API. Kosongkan kalau mau
+otomatis diambil dari domain yang sedang diakses, jadi contoh selalu cocok dengan domain publik
+aplikasi.
 
 `BETTER_AUTH_URL` harus sama persis dengan domain produksi tanpa trailing slash, kalau tidak callback
 OAuth diarahkan ke localhost. `ADMIN_EMAIL` menentukan siapa yang otomatis dapat role ADMIN saat login
@@ -149,11 +154,11 @@ Kalau nanti ada perubahan skema, `prisma migrate deploy` tetap otomatis di build
 | `Command failed with exit code 1: tsx prisma/seed.ts` | Seed lewat pooler atau Prisma Client belum ter-generate | Seed manual: `npm run db:seed` |
 | `Environment variable not found: DIRECT_URL` | Env var Vercel belum lengkap | Isi `DIRECT_URL` di Project Settings |
 | `Environment variable not found: DATABASE_URL` | `DATABASE_URL` belum diisi | Isi di Project Settings |
-| `Can't reach database server` | Kredensial atau jaringan ke Neon bermasalah | Cek `curl https://domain-anda.vercel.app/api/health` |
+| `Can't reach database server` | Kredensial atau jaringan ke Neon bermasalah | Cek `curl https://routingai.vercel.app/api/health` |
 | Halaman 500 dengan `The table public.Model does not exist` | `DATABASE_URL` dan `DIRECT_URL` menunjuk project atau database yang berbeda | Samakan keduanya, lalu `npm run db:deploy` |
 | Halaman 500 dengan `Invalid lastRequest: Expected DateTime, provided Int` | Kolom `RateLimit.lastRequest` harus `BigInt` (epoch milidetik), bukan `DateTime` | `npm run db:deploy` dengan skema terbaru |
 | Login Google balas 500 | Rate limit database gagal menulis, atau `BETTER_AUTH_URL` salah | `curl -X POST <domain>/api/auth/sign-in/social` untuk melihat redirect_uri yang dipakai |
-| `redirect_uri_mismatch` dari Google | Redirect URI domain produksi belum terdaftar di OAuth client | Tambah `https://domain-anda.vercel.app/api/auth/callback/google` di Google Cloud Console |
+| `redirect_uri_mismatch` dari Google | Redirect URI domain produksi belum terdaftar di OAuth client | Tambah `https://routingai.vercel.app/api/auth/callback/google` di Google Cloud Console |
 | Halaman 500 tanpa pesan | Error runtime, cek Function Logs | `/api/health` menunjuk env var mana yang kurang |
 
 ### Checklist OAuth consent screen
@@ -184,7 +189,7 @@ Logo untuk di-upload ke consent screen sudah ada di repo: `public/logo-512.png` 
 `public/logo-96.png`. Favicon browser memakai `app/icon.svg` yang memakai motif yang sama.
 
 Redirect URI di OAuth client harus persis sama dengan domain produksi, formatnya:
-`https://domain-anda/api/auth/callback/google`.
+`https://routingai.vercel.app/api/auth/callback/google`.
 
 ### Aturan menempel env var
 
@@ -268,7 +273,7 @@ Kalau database-nya diganti (misal pindah ke project Neon baru dari integrasi Ver
 2. Redeploy. Build menjalankan `prisma migrate deploy` memakai `DIRECT_URL`, jadi schema ke-create
    otomatis di database itu.
 3. Seed sekali di database yang sama: arahkan `.env` ke URL baru, lalu `npm run db:seed`.
-4. Verifikasi `curl https://domain-anda.vercel.app/api/health`. `db.missingTables` harus kosong,
+4. Verifikasi `curl https://routingai.vercel.app/api/health`. `db.missingTables` harus kosong,
    `db.migrations` berisi 2 nama migration, dan `targets.sameTarget` harus `true`.
 
 ### Prisma Postgres
@@ -297,13 +302,13 @@ POSTGRES_URL        = postgres://USER:PASS@db.prisma.io:5432/postgres?sslmode=re
 
 Di OAuth client Google, tambahkan:
 
-- Authorized JavaScript origins: `https://domain-anda.vercel.app`
-- Authorized redirect URIs: `https://domain-anda.vercel.app/api/auth/callback/google`
+- Authorized JavaScript origins: `https://routingai.vercel.app`
+- Authorized redirect URIs: `https://routingai.vercel.app/api/auth/callback/google`
 
 ### 5. Cek hasil deploy
 
 ```bash
-curl https://domain-anda.vercel.app/api/health
+curl https://routingai.vercel.app/api/health
 ```
 
 `ok: true` berarti semua env var lengkap dan database terjangkau. Kalau `ok: false`, field `missing`
@@ -313,7 +318,7 @@ menampilkan nama variabel, tidak pernah nilainya.
 ## Memakai API
 
 ```bash
-curl https://domain-anda/v1/chat/completions \
+curl https://routingai.vercel.app/v1/chat/completions \
   -H "Authorization: Bearer sk-rly-..." \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Halo"}]}'
@@ -322,7 +327,7 @@ curl https://domain-anda/v1/chat/completions \
 ```python
 from openai import OpenAI
 
-client = OpenAI(base_url="https://domain-anda/v1", api_key="sk-rly-...")
+client = OpenAI(base_url="https://routingai.vercel.app/v1", api_key="sk-rly-...")
 reply = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Halo"}],
@@ -424,10 +429,10 @@ model di sisi provider. Contoh: slug `minimax-m3.1-flash:free` dengan nama model
 
 ```bash
 # daftar model aktif
-curl https://domain-anda/v1/models -H "Authorization: Bearer sk-rly-..."
+curl https://routingai.vercel.app/v1/models -H "Authorization: Bearer sk-rly-..."
 
 # panggil model
-curl https://domain-anda/v1/chat/completions \
+curl https://routingai.vercel.app/v1/chat/completions \
   -H "Authorization: Bearer sk-rly-..." \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Halo"}]}'

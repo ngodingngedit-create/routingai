@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { getApiBaseUrl } from "@/lib/public-url";
 import { getSettings } from "@/lib/settings";
 import { formatCredits } from "@/lib/format";
 import { Code } from "@/components/ui";
@@ -12,13 +13,12 @@ export const metadata = {
 };
 
 export default async function DocsPage() {
-  const [settings, modelCount, providerCount] = await Promise.all([
+  const [settings, modelCount, providerCount, baseUrl] = await Promise.all([
     getSettings(),
     prisma.model.count({ where: { enabled: true } }),
     prisma.provider.count({ where: { active: true } }),
+    getApiBaseUrl(),
   ]);
-
-  const baseUrl = "https://domain-anda/v1";
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12">

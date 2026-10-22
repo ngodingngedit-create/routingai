@@ -3,8 +3,10 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { revokeApiKey } from "@/lib/actions/keys";
 import { formatDateTime } from "@/lib/format";
-import { buttonClass, Card, CardHeader, EmptyState, PageTitle, StatusBadge } from "@/components/ui";
+import { getApiBaseUrl } from "@/lib/public-url";
+import { buttonClass, Card, CardHeader, Code, EmptyState, PageTitle, StatusBadge } from "@/components/ui";
 import { ApiKeyForm } from "@/components/api-key-form";
+import { CopyButton } from "@/components/copy-button";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +14,20 @@ export const metadata = { title: "Kunci API" };
 
 export default async function ApiKeysPage() {
   const { user } = await requireUser();
-  const keys = await prisma.apiKey.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+  const [keys, baseUrl] = await Promise.all([
+    prisma.apiKey.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    }),
+    getApiBaseUrl(),
+  ]);
+
+  const snippet = `from openai import OpenAI
+
+client = OpenAI(
+    base_url="${baseUrl}",
+    api_key="sk-rly-...",
+)`;
 
   return (
     <div className="space-y-8">
@@ -23,6 +35,32 @@ export default async function ApiKeysPage() {
         title="Kunci API"
         description="Kunci ini yang dipakai saat memanggil endpoint RoutingAI. Nilai asli hanya ditampilkan sekali."
       />
+
+      <Card>
+        <CardHeader
+          title="Base URL"
+          description="Masukkan ke base_url SDK, atau ke header Authorization kalau memakai curl."
+        />
+        <div className="space-y-4 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="rounded-[6px] border border-line bg-surface-2 px-3 py-2 font-mono text-sm text-text">
+              {baseUrl}
+            </code>
+            <CopyButton value={baseUrl} />
+          </div>
+          <pre className="overflow-x-auto rounded-[6px] border border-line bg-surface-2 px-3 py-2 font-mono text-[12.5px] leading-relaxed text-muted">
+            {snippet}
+          </pre>
+          <p className="text-xs text-muted">
+            Endpoint yang tersedia: <Code>/v1/chat/completions</Code>, <Code>/v1/models</Code>,{" "}
+            <Code>/v1/usage</Code>. Detailnya ada di{" "}
+            <Link href="/docs" className="underline underline-offset-2 hover:text-text">
+              dokumentasi
+            </Link>
+            .
+          </p>
+        </div>
+      </Card>
 
       <Card>
         <CardHeader title="Buat kunci baru" description="Maksimal 10 kunci aktif per akun." />

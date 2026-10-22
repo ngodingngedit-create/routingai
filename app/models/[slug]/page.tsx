@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { decodeSlugParam } from "@/lib/slug";
+import { getApiBaseUrl } from "@/lib/public-url";
 import { formatUsdPerMillion } from "@/lib/format";
 import { buttonClass, Code } from "@/components/ui";
 
@@ -17,10 +18,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ModelDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
-  const model = await prisma.model.findUnique({
-    where: { slug },
-    include: { provider: true },
-  });
+  const [model, baseUrl] = await Promise.all([
+    prisma.model.findUnique({
+      where: { slug },
+      include: { provider: true },
+    }),
+    getApiBaseUrl(),
+  ]);
 
   if (!model || !model.enabled || !model.provider.active) notFound();
 
@@ -31,7 +35,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
     ["Input gambar", Boolean(capabilities.vision)],
   ];
 
-  const sample = `curl https://domain-anda/v1/chat/completions \\
+  const sample = `curl ${baseUrl}/chat/completions \\
   -H "Authorization: Bearer sk-rly-..." \\
   -H "Content-Type: application/json" \\
   -d '{"model": "${model.slug}", "messages": [{"role": "user", "content": "Halo"}]}'`;
