@@ -364,6 +364,97 @@ Kode error: `401 invalid_api_key`, `402 insufficient_credits`, `404 model_not_fo
 | `npm run check:actions` | Cek alur kunci, top up, dan penyesuaian kredit |
 | `npx tsx --env-file=.env scripts/dev-session.ts` | Cetak cookie sesi lokal untuk menguji halaman ber-session |
 
+## Operasional harian
+
+### Login sebagai admin
+
+Role ADMIN diberikan otomatis ke user yang emailnya sama dengan `ADMIN_EMAIL` di environment, saat
+user itu dibuat. Untuk user yang sudah terdaftar, pakai perintah ini:
+
+```bash
+npm run admin:promote -- email.kamu@gmail.com
+```
+
+Perintahnya idempotent, jadi aman dijalankan berulang. Akun harus sudah pernah login di aplikasi
+supaya barisnya ada di database. Perubahan role langsung berlaku tanpa logout, karena role dibaca
+dari database tiap request.
+
+### Menambah provider
+
+Provider adalah upstream milikmu sendiri, misalnya akun OpenAI, Anthropic, Gemini, atau OpenRouter.
+
+1. `/admin/providers`, pilih kartu provider yang mau dipakai
+2. Isi **Kunci API provider** dengan kunci dari dashboard provider. Kunci dienkripsi sebelum disimpan,
+   layar hanya menampilkan empat karakter terakhir
+3. Base URL biarkan sesuai bawaan, ganti hanya kalau kamu memakai endpoint lain
+4. Centang **Aktif dan bisa dipakai (kunci API wajib sudah terisi)**
+5. Simpan
+
+Provider tanpa kunci API tidak bisa diaktifkan. Modelnya akan dibalas `503 provider_not_configured`.
+
+### Menambah model
+
+1. `/admin/models`, kartu **Tambah model**
+2. Isi field:
+
+   | Field | Isi | Contoh |
+   |---|---|---|
+   | Slug (dipakai di request) | nama yang dipanggil di API, huruf kecil | `gpt-4o-mini` |
+   | Nama tampilan | nama untuk manusia di katalog | `GPT-4o mini` |
+   | Provider | pilih dari dropdown | OpenAI |
+   | Nama model di provider | id persis di sisi provider | `gpt-4o-mini` |
+   | Harga input USD / 1M token | dari halaman harga resmi provider | `0.15` |
+   | Harga output USD / 1M token | dari halaman harga resmi provider | `0.60` |
+   | Konteks maksimum | token context window | `128000` |
+   | Output maksimum | token output per request | `16384` |
+   | Deskripsi | opsional | |
+
+3. Centang **Aktif dan tampil di katalog**
+4. Simpan
+
+Aturan: model aktif wajib punya harga input atau output lebih besar dari nol. Model yang harganya
+belum diisi ditolak, supaya tidak ada request yang berjalan tanpa biaya yang jelas. Ambil harga dari
+halaman harga resmi provider, karena tiap provider punya tarifnya sendiri.
+
+### Menguji model
+
+```bash
+# daftar model aktif
+curl https://domain-anda/v1/models -H "Authorization: Bearer sk-rly-..."
+
+# panggil model
+curl https://domain-anda/v1/chat/completions \
+  -H "Authorization: Bearer sk-rly-..." \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Halo"}]}'
+```
+
+Kuncinya dibuat di `/dashboard/api-keys`. Nilai kunci asli hanya ditampilkan sekali.
+
+### Kredit
+
+Saldo dalam kredit, 1000 kredit setara 1 USD. Biaya satu request:
+
+```
+(token_input / 1e6 x harga_input + token_output / 1e6 x harga_output) x (1 + margin) x 1000
+```
+
+Saldo dipotong otomatis setelah request selesai. Kalau saldo kurang, request ditolak dengan
+`402 insufficient_credits` sebelum dikirim ke provider. Batas minimum saldo dihitung dari
+`max_tokens` yang diminta, jadi turunkan `max_tokens` kalau request ditolak padahal saldo terlihat
+cukup.
+
+Top up lewat `/dashboard/billing` → ajukan, lalu disetujui di `/admin/orders`.
+
+### Kalau model tidak muncul di katalog
+
+1. Provider-nya aktif?
+2. Kunci API provider sudah terisi?
+3. Modelnya aktif (centang Aktif dan tampil di katalog)?
+4. Harga input atau output lebih besar dari nol?
+
+`GET /v1/models` hanya menampilkan model yang aktif dan provider-nya aktif.
+
 ## Struktur
 
 ```

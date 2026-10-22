@@ -5,6 +5,7 @@
 import { loadEnvFile } from "node:process";
 import { createHash } from "node:crypto";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { withConnectTimeout } from "../lib/db-target";
 import {
   applyCreditAdjustment,
   approveOrderCredits,
@@ -20,7 +21,7 @@ try {
 }
 
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  datasourceUrl: withConnectTimeout(process.env.DIRECT_URL ?? process.env.DATABASE_URL),
 });
 const EMAIL = "actions-check@local.test";
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "admin@routingai.local").trim().toLowerCase();

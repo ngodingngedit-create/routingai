@@ -1,9 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { withConnectTimeout } from "../lib/db-target";
 
 // Seed jalan di luar request serverless, jadi pakai koneksi direct kalau ada.
 // Lewat pooler bisa timeout saat build karena koneksi dari migrate sebelumnya belum dilepas.
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  datasourceUrl: withConnectTimeout(process.env.DIRECT_URL ?? process.env.DATABASE_URL),
 });
 
 const PROVIDERS = [

@@ -81,11 +81,21 @@ export async function saveProvider(_prev: AdminFormState, formData: FormData): P
     return { status: "done", message: `Provider ${name} ditambahkan.` };
   }
 
+  // Provider tanpa kunci API tidak bisa melayani request, jadi tidak boleh aktif.
+  const hasKey = Boolean(apiKey || provider.apiKeyEnc);
+  if (!hasKey) {
+    data.active = false;
+  }
+
   await prisma.provider.update({ where: { id: provider.id }, data });
   await revalidateAdmin();
   return {
     status: "done",
-    message: `Provider ${name} disimpan. ${apiKey ? "Kredensial baru terenkripsi." : "Kredensial tidak diubah."}`,
+    message: hasKey
+      ? `Provider ${name} disimpan. ${apiKey ? "Kredensial baru terenkripsi." : "Kredensial tidak diubah."}${
+          data.active === false ? " Provider tetap nonaktif." : ""
+        }`
+      : `Provider ${name} disimpan, tapi tidak bisa diaktifkan karena kunci API masih kosong.`,
   };
 }
 

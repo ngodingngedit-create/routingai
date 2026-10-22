@@ -6,6 +6,7 @@
 import { createServer } from "node:http";
 import { loadEnvFile } from "node:process";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { withConnectTimeout } from "../lib/db-target";
 import { generateApiKey, encryptSecret } from "../lib/crypto";
 import { computeCostCredits } from "../lib/billing";
 
@@ -16,7 +17,7 @@ try {
 }
 
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  datasourceUrl: withConnectTimeout(process.env.DIRECT_URL ?? process.env.DATABASE_URL),
 });
 const BASE_URL = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 const USER_EMAIL = "smoke@local.test";

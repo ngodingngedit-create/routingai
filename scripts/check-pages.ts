@@ -6,6 +6,7 @@
 import { loadEnvFile } from "node:process";
 import { createHmac, randomBytes } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { withConnectTimeout } from "@/lib/db-target";
 
 try {
   loadEnvFile();
@@ -14,7 +15,7 @@ try {
 }
 
 const prisma = new PrismaClient({
-  datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  datasourceUrl: withConnectTimeout(process.env.DIRECT_URL ?? process.env.DATABASE_URL),
 });
 
 const BASE_URL = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";

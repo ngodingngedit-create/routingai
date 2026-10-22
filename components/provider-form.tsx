@@ -93,7 +93,7 @@ export function ProviderForm({ provider, mode }: { provider?: Provider; mode: "e
 
       <label className="flex items-center gap-2 text-sm text-text">
         <input type="checkbox" name="active" defaultChecked={provider?.active} className="h-4 w-4 accent-[var(--accent)]" />
-        Aktif dan bisa dipakai
+        Aktif dan bisa dipakai (kunci API wajib sudah terisi)
       </label>
 
       {state.status === "error" ? <p className="text-xs text-danger">{state.message}</p> : null}

@@ -19,6 +19,7 @@
     "db:info": "tsx scripts/db-info.ts",
     "db:studio": "tsx scripts/studio.ts",
     "db:studio:backup": "tsx scripts/studio.ts BACKUP_DATABASE_URL",
+    "admin:promote": "tsx scripts/promote-admin.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

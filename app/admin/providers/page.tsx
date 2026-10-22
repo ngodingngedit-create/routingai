@@ -32,6 +32,12 @@ export default async function AdminProvidersPage() {
               action={<StatusBadge value={provider.active ? "ACTIVE" : "NONAKTIF"} label={provider.active ? "Aktif" : "Nonaktif"} />}
             />
             <div className="p-4">
+              {!provider.active ? (
+                <p className="mb-3 rounded-[6px] border border-line bg-surface-2 px-3 py-2 text-xs text-muted">
+                  Provider ini belum aktif, jadi modelnya tidak bisa dilayani. Isi kunci API, centang
+                  aktif, lalu simpan.
+                </p>
+              ) : null}
               <ProviderForm
                 provider={{
                   id: provider.id,

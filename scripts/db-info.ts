@@ -3,6 +3,7 @@
  * Jalankan: npm run db:info -- "postgresql://user:pass@host/neondb?sslmode=require"
  */
 import { PrismaClient } from "@prisma/client";
+import { withConnectTimeout } from "@/lib/db-target";
 
 const APP_TABLES = [
   "User",
@@ -43,7 +44,7 @@ async function main() {
     );
   }
 
-  const prisma = new PrismaClient({ datasourceUrl: target });
+  const prisma = new PrismaClient({ datasourceUrl: withConnectTimeout(target) });
   try {
     const [info] = await prisma.$queryRaw<{ database: string; username: string }[]>`
       SELECT current_database() AS database, current_user AS username

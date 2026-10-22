@@ -55,9 +55,9 @@ export const DEFAULT_CONNECT_TIMEOUT_SECONDS = 20;
  * batas 10 detik default Prisma lalu gagal dengan "Can't reach database server".
  */
 export function withConnectTimeout(
-  url: string,
+  url: string | undefined,
   seconds: number = DEFAULT_CONNECT_TIMEOUT_SECONDS,
-): string {
+): string | undefined {
   if (!url) return url;
   if (/[?&]connect_timeout=/.test(url)) return url;
   const separator = url.includes("?") ? "&" : "?";
