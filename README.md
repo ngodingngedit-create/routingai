@@ -455,6 +455,23 @@ cukup.
 
 Top up lewat `/dashboard/billing` → ajukan, lalu disetujui di `/admin/orders`.
 
+### Playground
+
+`/dashboard/playground` mengirim request nyata ke model aktif memakai kunci API yang kamu tempel.
+Request ini memakai router yang sama dengan endpoint `/v1`, jadi biaya, rate limit, pencatatan
+pemakaian, dan kode errornya identik dengan panggilan API biasa.
+
+- Playground wajib login, jadi endpoint `/api/playground` tidak bisa dipakai tanpa sesi.
+- Kunci API hanya dikirim ke server untuk request itu saja, tidak disimpan dan tidak ditulis ke log.
+- Kunci yang ditempel milik akun lain akan memberi peringatan, karena kreditnya kepotong dari saldo
+  akun itu.
+- Respons streamed. Chunk penutup stream membawa `usage` dengan `credits_charged` dan
+  `balance_credits`, formatnya sama seperti `stream_options.include_usage` dari OpenAI. Ini juga
+  berlaku untuk endpoint `/v1` mode streaming.
+
+Kode error yang mungkin muncul sama dengan endpoint `/v1`, termasuk `401 invalid_api_key`,
+`402 insufficient_credits`, `429 rate_limited`, dan `503 provider_not_configured`.
+
 ### Kalau model tidak muncul di katalog
 
 Empat syarat, semuanya harus terpenuhi:

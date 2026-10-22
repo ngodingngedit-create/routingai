@@ -77,6 +77,7 @@ async function main() {
   const guardedPages: [string, string][] = [
     ["/dashboard", "Ringkasan"],
     ["/dashboard/api-keys", "Kunci API"],
+    ["/dashboard/playground", "Playground"],
     ["/dashboard/usage", "Pemakaian"],
     ["/dashboard/billing", "Saldo dan tagihan"],
     ["/admin", "Ringkasan admin"],

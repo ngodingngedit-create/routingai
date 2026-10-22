@@ -27,9 +27,13 @@ export type AuthOutcome =
   | { ok: true; apiKey: ApiKeyWithUser }
   | { ok: false; response: Response };
 
-export async function authenticateApiKey(request: Request): Promise<AuthOutcome> {
-  const header = request.headers.get("authorization") ?? "";
-  const raw = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
+/**
+ * Mencari kunci API dari teks polosnya.
+ *
+ * Dipakai oleh endpoint /v1 (kunci diambil dari header) dan oleh playground
+ * (kunci dikirim dari form), jadi aturan validasinya hanya satu tempat.
+ */
+export async function lookupApiKey(raw: string): Promise<AuthOutcome> {
   if (!raw) {
     return {
       ok: false,
@@ -68,6 +72,12 @@ export async function authenticateApiKey(request: Request): Promise<AuthOutcome>
   }
 
   return { ok: true, apiKey: apiKey as unknown as ApiKeyWithUser };
+}
+
+export async function authenticateApiKey(request: Request): Promise<AuthOutcome> {
+  const header = request.headers.get("authorization") ?? "";
+  const raw = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
+  return lookupApiKey(raw);
 }
 
 /** Limit per menit per kunci, jendela tetap 60 detik di database. */

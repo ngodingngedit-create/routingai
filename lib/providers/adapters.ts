@@ -28,7 +28,8 @@ export function openAIAdapter(extraHeaders: Record<string, string> = {}): Provid
       return { ...source, model: ctx.modelSlug };
     },
     handleSseEvent(event: SseEvent, state: StreamState) {
-      if (event.data === "[DONE]") return ["data: [DONE]\n\n"];
+      // Penutup stream di-emerging oleh core supaya chunk usage selalu sebelum [DONE].
+      if (event.data === "[DONE]") return [];
       try {
         const payload = JSON.parse(event.data) as {
           usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -174,7 +175,6 @@ export const anthropicAdapter: ProviderAdapter = {
         state.finishSent = true;
         out.push(openAIChunk(state, {}, "stop"));
       }
-      out.push("data: [DONE]\n\n");
       return out;
     }
 

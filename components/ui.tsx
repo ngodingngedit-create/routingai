@@ -1,7 +1,15 @@
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 
 export function cn(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ");
+}
+
+/** Memilih antara mode controlled (value) dan uncontrolled (defaultValue). */
+function fieldValue(
+  value: string | number | undefined,
+  defaultValue: string | number | undefined,
+): { value?: string | number; defaultValue?: string | number } {
+  return value === undefined ? { defaultValue } : { value };
 }
 
 type ButtonVariant = "primary" | "outline" | "ghost" | "danger";
@@ -62,6 +70,8 @@ export function Input({
   type = "text",
   placeholder,
   defaultValue,
+  value,
+  onChange,
   required,
   min,
   max,
@@ -74,6 +84,8 @@ export function Input({
   type?: string;
   placeholder?: string;
   defaultValue?: string | number;
+  value?: string | number;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   min?: number | string;
   max?: number | string;
@@ -87,7 +99,8 @@ export function Input({
       name={name}
       type={type}
       placeholder={placeholder}
-      defaultValue={defaultValue}
+      {...fieldValue(value, defaultValue)}
+      onChange={onChange}
       required={required}
       min={min}
       max={max}
@@ -104,6 +117,8 @@ export function Textarea({
   name,
   placeholder,
   defaultValue,
+  value,
+  onChange,
   rows = 3,
   required,
 }: {
@@ -111,6 +126,8 @@ export function Textarea({
   name: string;
   placeholder?: string;
   defaultValue?: string;
+  value?: string;
+  onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
   rows?: number;
   required?: boolean;
 }) {
@@ -119,7 +136,8 @@ export function Textarea({
       id={id}
       name={name}
       placeholder={placeholder}
-      defaultValue={defaultValue}
+      {...fieldValue(value, defaultValue)}
+      onChange={onChange}
       rows={rows}
       required={required}
       className="w-full rounded-[6px] border border-line bg-bg px-3 py-2 text-sm text-text placeholder:text-muted/70 focus:border-accent focus:outline-none"
@@ -131,18 +149,23 @@ export function Select({
   id,
   name,
   defaultValue,
+  value,
+  onChange,
   options,
 }: {
   id: string;
   name: string;
   defaultValue?: string;
+  value?: string;
+  onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: { value: string; label: string }[];
 }) {
   return (
     <select
       id={id}
       name={name}
-      defaultValue={defaultValue}
+      {...fieldValue(value, defaultValue)}
+      onChange={onChange}
       className="h-10 w-full rounded-[6px] border border-line bg-bg px-3 text-sm text-text focus:border-accent focus:outline-none"
     >
       {options.map((option) => (
