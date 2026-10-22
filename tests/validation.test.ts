@@ -28,6 +28,27 @@ describe("validateModelInput", () => {
     expect(validateModelInput({ ...validModel, slug: "GPT 4o" }).ok).toBe(false);
   });
 
+  it("menerima sufiks titik dua gaya OpenRouter", () => {
+    expect(validateModelInput({ ...validModel, slug: "minimax-m3.1-flash:free" }).ok).toBe(true);
+  });
+
+  it("menerima awalan provider gaya OpenRouter", () => {
+    expect(
+      validateModelInput({ ...validModel, slug: "minimax/minimax-m3.1-flash:free" }).ok,
+    ).toBe(true);
+  });
+
+  it("menolak karakter yang tidak aman di URL", () => {
+    expect(validateModelInput({ ...validModel, slug: "model?a=b" }).ok).toBe(false);
+    expect(validateModelInput({ ...validModel, slug: "model&x" }).ok).toBe(false);
+    expect(validateModelInput({ ...validModel, slug: "model#frag" }).ok).toBe(false);
+    expect(validateModelInput({ ...validModel, slug: "-model" }).ok).toBe(false);
+  });
+
+  it("menolak slug yang kepanjangan", () => {
+    expect(validateModelInput({ ...validModel, slug: `a${"b".repeat(70)}` }).ok).toBe(false);
+  });
+
   it("menolak model aktif tanpa harga", () => {
     const result = validateModelInput({ ...validModel, priceIn: 0, priceOut: 0, enabled: true });
     expect(result.ok).toBe(false);

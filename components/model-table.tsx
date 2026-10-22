@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { modelHref } from "@/lib/slug";
 
 export type ModelRow = {
   slug: string;
@@ -96,7 +97,7 @@ export function ModelTable({ models }: { models: ModelRow[] }) {
               filtered.map((model) => (
                 <tr key={model.slug}>
                   <td className="px-4 py-3">
-                    <Link href={`/models/${model.slug}`} className="font-mono text-sm text-text hover:text-accent">
+                    <Link href={modelHref(model.slug)} className="font-mono text-sm text-text hover:text-accent">
                       {model.slug}
                     </Link>
                     <p className="text-xs text-muted">{model.displayName}</p>

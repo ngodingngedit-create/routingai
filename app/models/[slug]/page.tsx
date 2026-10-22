@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { decodeSlugParam } from "@/lib/slug";
 import { formatUsdPerMillion } from "@/lib/format";
 import { buttonClass, Code } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlugParam(rawSlug);
   const model = await prisma.model.findUnique({ where: { slug }, select: { displayName: true } });
   return { title: model ? model.displayName : "Model" };
 }
 
 export default async function ModelDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeSlugParam(rawSlug);
   const model = await prisma.model.findUnique({
     where: { slug },
     include: { provider: true },

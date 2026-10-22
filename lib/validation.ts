@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { isValidSlug, SLUG_HINT } from "@/lib/slug";
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 
@@ -13,10 +14,10 @@ export function validateModelInput(input: {
   maxOutput: number;
   enabled: boolean;
 }): ValidationResult {
-  if (!/^[a-z0-9][a-z0-9._/-]{0,60}$/.test(input.slug)) {
+  if (!isValidSlug(input.slug)) {
     return {
       ok: false,
-      message: "Slug harus huruf kecil, angka, titik, garis, atau garis miring. Contoh: gpt-4o-mini.",
+      message: SLUG_HINT,
     };
   }
   if (!input.displayName.trim()) return { ok: false, message: "Nama tampilan wajib diisi." };

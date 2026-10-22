@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { formatCredits, formatUsdPerMillion } from "@/lib/format";
+import { modelHref } from "@/lib/slug";
 import { buttonClass, Code, EmptyState } from "@/components/ui";
 import { CopyButton } from "@/components/copy-button";
 
@@ -164,7 +165,7 @@ print(reply.choices[0].message.content)`;
                 {models.map((model) => (
                   <tr key={model.id}>
                     <td className="px-4 py-3">
-                      <Link href={`/models/${model.slug}`} className="font-mono text-sm text-text hover:text-accent">
+                      <Link href={modelHref(model.slug)} className="font-mono text-sm text-text hover:text-accent">
                         {model.slug}
                       </Link>
                       <p className="text-xs text-muted">{model.displayName}</p>

@@ -416,6 +416,10 @@ Aturan: model aktif wajib punya harga input atau output lebih besar dari nol. Mo
 belum diisi ditolak, supaya tidak ada request yang berjalan tanpa biaya yang jelas. Ambil harga dari
 halaman harga resmi provider, karena tiap provider punya tarifnya sendiri.
 
+Slug boleh memakai `/` dan `:` mengikuti penamaan provider, jadi slug publik boleh berbeda dari id
+model di sisi provider. Contoh: slug `minimax-m3.1-flash:free` dengan nama model di provider
+`minimax/minimax-m3.1-flash:free`.
+
 ### Menguji model
 
 ```bash
