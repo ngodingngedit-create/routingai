@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatUsdPerMillion } from "@/lib/format";
+import { formatEffectivePrice } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
 import { buttonClass, EmptyState } from "@/components/ui";
 import { ModelTable } from "@/components/model-table";
 
@@ -12,11 +13,14 @@ export const metadata = {
 };
 
 export default async function ModelsPage() {
-  const models = await prisma.model.findMany({
-    where: { enabled: true, provider: { active: true } },
-    include: { provider: true },
-    orderBy: [{ sortOrder: "asc" }, { slug: "asc" }],
-  });
+  const [models, settings] = await Promise.all([
+    prisma.model.findMany({
+      where: { enabled: true, provider: { active: true } },
+      include: { provider: true },
+      orderBy: [{ sortOrder: "asc" }, { slug: "asc" }],
+    }),
+    getSettings(),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12">
@@ -40,8 +44,8 @@ export default async function ModelsPage() {
             displayName: model.displayName,
             provider: model.provider.name,
             contextWindow: model.contextWindow,
-            priceIn: formatUsdPerMillion(model.priceIn),
-            priceOut: formatUsdPerMillion(model.priceOut),
+    priceIn: formatEffectivePrice(model.priceIn, settings.markupPercent),
+    priceOut: formatEffectivePrice(model.priceOut, settings.markupPercent),
           }))}
         />
       ) : (

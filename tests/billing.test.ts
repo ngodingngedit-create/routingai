@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeCostCredits, estimateTokens, textOfContent } from "@/lib/billing";
+import { computeCostCredits, estimateTokens, textOfContent, withCreditUsage } from "@/lib/billing";
+import { Prisma } from "@prisma/client";
 
 const PRICE_IN = "0.15"; // USD per 1M token
 const PRICE_OUT = "0.60";
@@ -77,5 +78,25 @@ describe("textOfContent", () => {
 
   it("mengembalikan string kosong untuk bentuk lain", () => {
     expect(textOfContent(42)).toBe("");
+  });
+});
+
+describe("withCreditUsage", () => {
+  it("menambahkan kredit terpakai dan saldo ke usage provider", () => {
+    const usage = withCreditUsage(
+      { prompt_tokens: 212, completion_tokens: 55, cost: 0 },
+      new Prisma.Decimal(0.00815),
+      new Prisma.Decimal(99.984213),
+    );
+    expect(usage.prompt_tokens).toBe(212);
+    expect(usage.cost).toBe(0);
+    expect(usage.credits_charged).toBe("0.00815");
+    expect(usage.balance_credits).toBe("99.984213");
+  });
+
+  it("bekerja kalau provider tidak mengirim usage", () => {
+    const usage = withCreditUsage(undefined, new Prisma.Decimal(1), new Prisma.Decimal(9));
+    expect(usage.credits_charged).toBe("1");
+    expect(usage.balance_credits).toBe("9");
   });
 });

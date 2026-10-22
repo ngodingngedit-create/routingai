@@ -49,11 +49,36 @@ export function isSameTarget(
 /** Default 20 detik, cukup untuk Prisma Postgres yang lagi bangun dari mode suspend. */
 export const DEFAULT_CONNECT_TIMEOUT_SECONDS = 20;
 
+/** Batas menunggu koneksi dari pool Prisma, defaultnya hanya 10 detik. */
+export const DEFAULT_POOL_TIMEOUT_SECONDS = 30;
+
 /**
- * Menambah connect_timeout ke connection string kalau belum ada.
- * Prisma Postgres suspend compute saat idle, dan koneksi pertama bisa melewati
+ * Menambah connect_timeout dan pool_timeout ke connection string kalau belum ada.
+ *
+ * Prisma Postgres suspend compute saat idle, jadi koneksi pertama bisa melewati
  * batas 10 detik default Prisma lalu gagal dengan "Can't reach database server".
+ * Pool timeout yang kecil juga bikin halaman yang query paralel gagal saat
+ * database sedang bangun, karena antrean kehabisan waktu.
  */
+export function withConnectionParams(
+  url: string | undefined,
+  options: {
+    connectTimeoutSeconds?: number;
+    poolTimeoutSeconds?: number;
+  } = {},
+): string | undefined {
+  if (!url) return url;
+  const connectTimeout = options.connectTimeoutSeconds ?? DEFAULT_CONNECT_TIMEOUT_SECONDS;
+  const poolTimeout = options.poolTimeoutSeconds ?? DEFAULT_POOL_TIMEOUT_SECONDS;
+  const separator = url.includes("?") ? "&" : "?";
+  const params: string[] = [];
+  if (!/[?&]connect_timeout=/.test(url)) params.push(`connect_timeout=${connectTimeout}`);
+  if (!/[?&]pool_timeout=/.test(url)) params.push(`pool_timeout=${poolTimeout}`);
+  if (params.length === 0) return url;
+  return `${url}${separator}${params.join("&")}`;
+}
+
+/** Versi lama yang hanya menambah connect_timeout. */
 export function withConnectTimeout(
   url: string | undefined,
   seconds: number = DEFAULT_CONNECT_TIMEOUT_SECONDS,

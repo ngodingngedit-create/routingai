@@ -3,8 +3,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { decryptSecret } from "@/lib/crypto";
 import { authenticateApiKey, consumeRateLimit, jsonError } from "@/lib/api-auth";
-import { computeCostCredits, estimateTokens, textOfContent } from "@/lib/billing";
+import { computeCostCredits, estimateTokens, textOfContent, withCreditUsage } from "@/lib/billing";
 import { getSettings } from "@/lib/settings";
+import { withDbRetry } from "@/lib/tx";
 import { recordUsage } from "@/lib/usage";
 import { getAdapter, type ChatRequest, type SseEvent, type StreamState } from "@/lib/providers";
 
@@ -83,10 +84,12 @@ export async function POST(request: Request) {
   }
   const body = parsed.data as ChatRequest;
 
-  const model = await prisma.model.findUnique({
-    where: { slug: body.model },
-    include: { provider: true },
-  });
+  const model = await withDbRetry(() =>
+    prisma.model.findUnique({
+      where: { slug: body.model },
+      include: { provider: true },
+    }),
+  );
   if (!model || !model.enabled) {
     const available = await prisma.model.findMany({
       where: { enabled: true },
@@ -259,7 +262,12 @@ export async function POST(request: Request) {
       data: { lastUsedAt: new Date() },
     });
 
-    return Response.json(converted, {
+    const withUsage = {
+      ...converted,
+      usage: withCreditUsage(converted.usage, result.charged, result.balance),
+    };
+
+    return Response.json(withUsage, {
       headers: {
         "x-routingai-credits-charged": result.charged.toString(),
         "x-routingai-balance": result.balance.toString(),

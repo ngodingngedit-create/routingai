@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sha256 } from "@/lib/crypto";
+import { withDbRetry } from "@/lib/tx";
 
 export function jsonError(status: number, code: string, message: string, extra?: Record<string, unknown>) {
   return Response.json({ error: { code, message, ...extra } }, { status });
@@ -40,10 +41,12 @@ export async function authenticateApiKey(request: Request): Promise<AuthOutcome>
     };
   }
 
-  const apiKey = await prisma.apiKey.findUnique({
-    where: { keyHash: sha256(raw) },
-    include: { user: true },
-  });
+  const apiKey = await withDbRetry(() =>
+    prisma.apiKey.findUnique({
+      where: { keyHash: sha256(raw) },
+      include: { user: true },
+    }),
+  );
 
   if (!apiKey) {
     return { ok: false, response: jsonError(401, "invalid_api_key", "Kunci API tidak dikenali.") };

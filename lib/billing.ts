@@ -47,3 +47,21 @@ export function textOfContent(content: unknown): string {
   }
   return "";
 }
+
+/**
+ * Menambahkan biaya kredit RoutingAI ke objek usage hasil provider.
+ *
+ * Provider seperti OpenRouter mengirim `cost` dalam satuan dolar mereka sendiri, jadi
+ * pemanggil perlu melihat berapa kredit yang benar-benar dipotong dari saldonya.
+ */
+export function withCreditUsage<T extends Record<string, unknown>>(
+  usage: T | undefined,
+  creditsCharged: Prisma.Decimal,
+  balanceCredits: Prisma.Decimal,
+): T & { credits_charged: string; balance_credits: string } {
+  return {
+    ...(usage ?? ({} as T)),
+    credits_charged: creditsCharged.toString(),
+    balance_credits: balanceCredits.toString(),
+  };
+}

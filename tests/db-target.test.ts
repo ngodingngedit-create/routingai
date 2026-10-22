@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeUrl, isSameTarget, normalizeHost, withConnectTimeout } from "@/lib/db-target";
+import { describeUrl, isSameTarget, normalizeHost, withConnectTimeout, withConnectionParams } from "@/lib/db-target";
 
 const POOLED =
   "postgresql://user:pass@ep-abc-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -95,5 +95,33 @@ describe("withConnectTimeout", () => {
 
   it("mengembalikan URL kosong tanpa perubahan", () => {
     expect(withConnectTimeout("")).toBe("");
+  });
+});
+
+describe("withConnectionParams", () => {
+  it("menambah connect_timeout dan pool_timeout sekaligus", () => {
+    expect(withConnectionParams("postgres://user@host/db?sslmode=require")).toBe(
+      "postgres://user@host/db?sslmode=require&connect_timeout=20&pool_timeout=30",
+    );
+  });
+
+  it("tidak menimpa param yang sudah ada", () => {
+    const url = "postgres://user@host/db?connect_timeout=45&pool_timeout=60";
+    expect(withConnectionParams(url)).toBe(url);
+  });
+
+  it("hanya menambah yang belum ada", () => {
+    expect(withConnectionParams("postgres://user@host/db?pool_timeout=60")).toBe(
+      "postgres://user@host/db?pool_timeout=60&connect_timeout=20",
+    );
+  });
+
+  it("menghormati nilai khusus", () => {
+    expect(
+      withConnectionParams("postgres://user@host/db", {
+        connectTimeoutSeconds: 5,
+        poolTimeoutSeconds: 7,
+      }),
+    ).toBe("postgres://user@host/db?connect_timeout=5&pool_timeout=7");
   });
 });

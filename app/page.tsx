@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { formatCredits, formatUsdPerMillion } from "@/lib/format";
+import { formatCredits, formatEffectivePrice } from "@/lib/format";
 import { getApiBaseUrl } from "@/lib/public-url";
 import { modelHref } from "@/lib/slug";
 import { buttonClass, Code, EmptyState } from "@/components/ui";
@@ -174,10 +174,10 @@ print(reply.choices[0].message.content)`;
                     </td>
                     <td className="hidden px-4 py-3 text-muted sm:table-cell">{model.provider.name}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs">
-                      {formatUsdPerMillion(model.priceIn)}
+                      {formatEffectivePrice(model.priceIn, settings.markupPercent)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-xs">
-                      {formatUsdPerMillion(model.priceOut)}
+                      {formatEffectivePrice(model.priceOut, settings.markupPercent)}
                     </td>
                   </tr>
                 ))}

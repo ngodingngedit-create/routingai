@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { runTransaction } from "@/lib/tx";
 
 export type UsageInput = {
   userId: string;
@@ -19,7 +19,7 @@ export type UsageInput = {
 };
 
 export async function recordUsage(input: UsageInput) {
-  return prisma.$transaction(async (tx) => {
+  return runTransaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: input.userId },
       select: { credits: true },

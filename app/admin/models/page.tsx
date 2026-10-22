@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { toggleModel } from "@/lib/actions/admin";
-import { formatUsdPerMillion } from "@/lib/format";
+import { formatEffectivePrice, formatUsdPerMillion } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
 import { buttonClass, Card, CardHeader, EmptyState, PageTitle, StatusBadge } from "@/components/ui";
 import { ModelForm } from "@/components/model-form";
 
@@ -12,13 +13,16 @@ export const metadata = { title: "Model" };
 export default async function AdminModelsPage() {
   await requireAdmin();
 
-  const [models, providers] = await Promise.all([
+  const [models, providers, settings] = await Promise.all([
     prisma.model.findMany({
       include: { provider: true },
       orderBy: [{ sortOrder: "asc" }, { slug: "asc" }],
     }),
     prisma.provider.findMany({ orderBy: { name: "asc" } }),
+    getSettings(),
   ]);
+
+  const markupPercent = Number(settings.markupPercent);
 
   return (
     <div className="space-y-8">
@@ -72,6 +76,12 @@ export default async function AdminModelsPage() {
                       <span className="font-mono text-xs text-muted">
                         {formatUsdPerMillion(model.priceIn)} / {formatUsdPerMillion(model.priceOut)}
                       </span>
+                      {markupPercent > 0 ? (
+                        <span className="font-mono text-xs text-accent">
+                          efektif {formatEffectivePrice(model.priceIn, markupPercent)} /{" "}
+                          {formatEffectivePrice(model.priceOut, markupPercent)}
+                        </span>
+                      ) : null}
                       <StatusBadge
                         value={model.enabled ? "ACTIVE" : "NONAKTIF"}
                         label={model.enabled ? "Aktif" : "Nonaktif"}

@@ -40,6 +40,20 @@ export function formatUsdPerMillion(value: Prisma.Decimal | number | string): st
   return `$${usdFormatter.format(number)}`;
 }
 
+/**
+ * Harga yang benar-benar dibayar pemanggil: harga provider ditambah margin admin.
+ * Markup 0 berarti harga sama persis dengan harga provider.
+ */
+export function formatEffectivePrice(
+  value: Prisma.Decimal | number | string,
+  markupPercent: number | string,
+): string {
+  const markup = toNumber(markupPercent);
+  const number = toNumber(value) * (1 + markup / 100);
+  if (number === 0) return "belum diatur";
+  return `$${usdFormatter.format(number)}`;
+}
+
 export function formatDate(value: Date): string {
   return dateFormatter.format(value);
 }

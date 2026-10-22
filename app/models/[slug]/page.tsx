@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { decodeSlugParam } from "@/lib/slug";
 import { getApiBaseUrl } from "@/lib/public-url";
-import { formatUsdPerMillion } from "@/lib/format";
+import { formatEffectivePrice, formatUsdPerMillion } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
 import { buttonClass, Code } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -18,15 +19,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ModelDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params;
   const slug = decodeSlugParam(rawSlug);
-  const [model, baseUrl] = await Promise.all([
+  const [model, baseUrl, settings] = await Promise.all([
     prisma.model.findUnique({
       where: { slug },
       include: { provider: true },
     }),
     getApiBaseUrl(),
+    getSettings(),
   ]);
 
   if (!model || !model.enabled || !model.provider.active) notFound();
+
+  const markupPercent = Number(settings.markupPercent);
 
   const capabilities = (model.capabilities ?? {}) as Record<string, unknown>;
   const capabilityRows: [string, boolean][] = [
@@ -62,11 +66,25 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ sl
       <div className="mt-8 grid gap-px overflow-hidden rounded-[10px] border border-line bg-line sm:grid-cols-2">
         <div className="bg-surface px-4 py-4">
           <p className="text-xs text-muted">Harga input per 1M token</p>
-          <p className="mt-1 font-mono text-lg text-text">{formatUsdPerMillion(model.priceIn)}</p>
+          <p className="mt-1 font-mono text-lg text-text">
+            {formatEffectivePrice(model.priceIn, markupPercent)}
+          </p>
+          {markupPercent > 0 ? (
+            <p className="mt-0.5 text-xs text-muted">
+              harga provider {formatUsdPerMillion(model.priceIn)} + margin {markupPercent}%
+            </p>
+          ) : null}
         </div>
         <div className="bg-surface px-4 py-4">
           <p className="text-xs text-muted">Harga output per 1M token</p>
-          <p className="mt-1 font-mono text-lg text-text">{formatUsdPerMillion(model.priceOut)}</p>
+          <p className="mt-1 font-mono text-lg text-text">
+            {formatEffectivePrice(model.priceOut, markupPercent)}
+          </p>
+          {markupPercent > 0 ? (
+            <p className="mt-0.5 text-xs text-muted">
+              harga provider {formatUsdPerMillion(model.priceOut)} + margin {markupPercent}%
+            </p>
+          ) : null}
         </div>
         <div className="bg-surface px-4 py-4">
           <p className="text-xs text-muted">Konteks maksimum</p>

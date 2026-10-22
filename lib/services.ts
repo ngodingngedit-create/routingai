@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { runTransaction } from "@/lib/tx";
 import { generateApiKey } from "@/lib/crypto";
 
 export type ServiceResult =
@@ -98,12 +99,12 @@ export async function applyCreditAdjustment(input: {
   // saldo tidak boleh negatif, pengurangan dibatasi saldo yang tersedia
   const applied = next.lt(0) ? current.neg() : delta;
 
-  await prisma.$transaction([
-    prisma.user.update({
+  await runTransaction(async (tx) => {
+    await tx.user.update({
       where: { id: input.userId },
       data: { credits: current.add(applied) },
-    }),
-    prisma.creditTx.create({
+    });
+    await tx.creditTx.create({
       data: {
         userId: input.userId,
         type: "ADJUST",
@@ -112,8 +113,8 @@ export async function applyCreditAdjustment(input: {
         note: input.note.trim().slice(0, 200),
         adminId: input.adminId,
       },
-    }),
-  ]);
+    });
+  });
 
   return {
     ok: true,
@@ -137,9 +138,9 @@ export async function approveOrderCredits(input: {
   const credits = new Prisma.Decimal(order.credits);
   const next = new Prisma.Decimal(target.credits).add(credits);
 
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: target.id }, data: { credits: next } }),
-    prisma.creditTx.create({
+  await runTransaction(async (tx) => {
+    await tx.user.update({ where: { id: target.id }, data: { credits: next } });
+    await tx.creditTx.create({
       data: {
         userId: target.id,
         type: "TOPUP",
@@ -148,12 +149,12 @@ export async function approveOrderCredits(input: {
         note: `Top up disetujui admin${order.note ? `: ${order.note}` : ""}`,
         adminId: input.adminId,
       },
-    }),
-    prisma.order.update({
+    });
+    await tx.order.update({
       where: { id: order.id },
       data: { status: "PAID", paidAt: new Date() },
-    }),
-  ]);
+    });
+  });
 
   return { ok: true, message: `Top up ${credits.toString()} kredit disetujui.` };
 }
