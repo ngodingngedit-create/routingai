@@ -50,37 +50,46 @@ export default async function AdminModelsPage() {
           />
         ) : (
           <div className="divide-y divide-line">
-            {models.map((model) => (
-              <div key={model.id} className="px-4 py-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-mono text-sm text-text">{model.slug}</p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      {model.displayName} · {model.provider.name} · {model.upstreamModel}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-mono text-xs text-muted">
-                      {formatUsdPerMillion(model.priceIn)} / {formatUsdPerMillion(model.priceOut)}
-                    </span>
-                    <StatusBadge
-                      value={model.enabled ? "ACTIVE" : "NONAKTIF"}
-                      label={model.enabled ? "Aktif" : "Nonaktif"}
-                    />
-                    <form action={toggleModel}>
-                      <input type="hidden" name="id" value={model.id} />
-                      <button type="submit" className={buttonClass("outline", "sm")}>
-                        {model.enabled ? "Nonaktifkan" : "Aktifkan"}
-                      </button>
-                    </form>
-                  </div>
-                </div>
+            {models.map((model) => {
+              const blockers: string[] = [];
+              if (!model.enabled) blockers.push("model belum diaktifkan");
+              if (model.priceIn.eq(0) && model.priceOut.eq(0)) blockers.push("harga belum diisi");
+              if (!model.provider.keyMask)
+                blockers.push(`kunci API ${model.provider.name} belum diisi`);
+              if (!model.provider.active)
+                blockers.push(`provider ${model.provider.name} belum aktif`);
 
-                {model.priceIn.eq(0) && model.priceOut.eq(0) ? (
-                  <p className="mt-2 text-xs text-danger">
-                    Harga belum diisi, model ini tidak bisa dipakai sampai harga ditetapkan.
-                  </p>
-                ) : null}
+              return (
+                <div key={model.id} className="px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm text-text">{model.slug}</p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {model.displayName} · {model.provider.name} · {model.upstreamModel}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="font-mono text-xs text-muted">
+                        {formatUsdPerMillion(model.priceIn)} / {formatUsdPerMillion(model.priceOut)}
+                      </span>
+                      <StatusBadge
+                        value={model.enabled ? "ACTIVE" : "NONAKTIF"}
+                        label={model.enabled ? "Aktif" : "Nonaktif"}
+                      />
+                      <form action={toggleModel}>
+                        <input type="hidden" name="id" value={model.id} />
+                        <button type="submit" className={buttonClass("outline", "sm")}>
+                          {model.enabled ? "Nonaktifkan" : "Aktifkan"}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  {blockers.length > 0 ? (
+                    <p className="mt-2 text-xs text-muted">
+                      Belum tampil di katalog: {blockers.join(", ")}.
+                    </p>
+                  ) : null}
 
                 <details className="mt-3">
                   <summary className="cursor-pointer text-xs text-muted hover:text-text">Ubah model</summary>
@@ -109,7 +118,8 @@ export default async function AdminModelsPage() {
                   </div>
                 </details>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

@@ -120,7 +120,7 @@ print(reply.choices[0].message.content)`;
               <p className="text-xs text-muted">
                 {providers.length > 0
                   ? "Provider yang dikonfigurasi admin"
-                  : "Admin belum mengaktifkan provider"}
+                  : "Provider belum ada yang aktif, jadi model belum bisa dilayani"}
               </p>
             </li>
           </ol>
@@ -185,8 +185,8 @@ print(reply.choices[0].message.content)`;
         ) : (
           <div className="mt-6 rounded-[10px] border border-line bg-surface">
             <EmptyState
-              title="Belum ada model aktif"
-              description="Admin belum mengaktifkan model dengan harga yang sudah diverifikasi. Katalog akan terisi sendiri begitu model pertama aktif."
+              title="Belum ada model yang bisa dilayani"
+              description="Model harus aktif, punya harga, dan provider-nya harus aktif dengan kunci API terisi. Katalog terisi sendiri setelah syarat itu terpenuhi."
               action={
                 <Link href="/models" className={buttonClass("outline", "sm")}>
                   Buka halaman katalog

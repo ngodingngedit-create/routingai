@@ -39,6 +39,43 @@ export default async function AdminPage() {
   const pendingCount = await prisma.order.count({ where: { status: "PENDING" } });
   const needsAction = pendingOrders.length + recentErrors.length;
 
+  const [providersWithoutKey, inactiveProviders, disabledModels, modelsWithoutPrice, hiddenModels] =
+    await Promise.all([
+      prisma.provider.count({ where: { keyMask: "" } }),
+      prisma.provider.count({ where: { active: false } }),
+      prisma.model.count({ where: { enabled: false } }),
+      prisma.model.count({ where: { priceIn: 0, priceOut: 0 } }),
+      prisma.model.count({ where: { enabled: true, provider: { active: false } } }),
+    ]);
+
+  const checklist = [
+    {
+      count: providersWithoutKey,
+      label: "provider belum punya kunci API",
+      href: "/admin/providers",
+    },
+    {
+      count: inactiveProviders,
+      label: "provider nonaktif",
+      href: "/admin/providers",
+    },
+    {
+      count: hiddenModels,
+      label: "model aktif tapi provider-nya nonaktif, jadi tidak tampil di katalog",
+      href: "/admin/models",
+    },
+    {
+      count: disabledModels,
+      label: "model belum diaktifkan",
+      href: "/admin/models",
+    },
+    {
+      count: modelsWithoutPrice,
+      label: "model belum punya harga",
+      href: "/admin/models",
+    },
+  ].filter((item) => item.count > 0);
+
   return (
     <div className="space-y-8">
       <PageTitle
@@ -92,6 +129,32 @@ export default async function AdminPage() {
                 </div>
                 <StatusBadge value={log.status} />
               </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Checklist"
+          description="Syarat supaya model bisa dipakai dan tampil di katalog."
+        />
+        {checklist.length === 0 ? (
+          <EmptyState
+            title="Semua sudah siap"
+            description="Setiap provider punya kunci API dan aktif, semua model punya harga dan aktif. Katalog publik siap dipakai."
+          />
+        ) : (
+          <div className="divide-y divide-line">
+            {checklist.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-surface-2"
+              >
+                <span className="text-sm text-muted">{item.label}</span>
+                <span className="font-mono text-sm text-text">{item.count}</span>
+              </Link>
             ))}
           </div>
         )}

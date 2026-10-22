@@ -52,9 +52,19 @@ export default async function AdminProvidersPage() {
               />
               <form action={toggleProvider} className="mt-3 border-t border-line pt-3">
                 <input type="hidden" name="id" value={provider.id} />
-                <button type="submit" className={buttonClass("outline", "sm")}>
+                <button
+                  type="submit"
+                  disabled={!provider.active && !provider.keyMask}
+                  className={buttonClass("outline", "sm")}
+                >
                   {provider.active ? "Nonaktifkan provider" : "Aktifkan provider"}
                 </button>
+                {!provider.active && !provider.keyMask ? (
+                  <p className="mt-2 text-xs text-muted">
+                    Kunci API belum diisi, jadi provider belum bisa diaktifkan. Isi kunci di form atas
+                    lalu simpan.
+                  </p>
+                ) : null}
               </form>
             </div>
           </Card>

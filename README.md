@@ -452,12 +452,16 @@ Top up lewat `/dashboard/billing` → ajukan, lalu disetujui di `/admin/orders`.
 
 ### Kalau model tidak muncul di katalog
 
-1. Provider-nya aktif?
-2. Kunci API provider sudah terisi?
-3. Modelnya aktif (centang Aktif dan tampil di katalog)?
-4. Harga input atau output lebih besar dari nol?
+Empat syarat, semuanya harus terpenuhi:
 
-`GET /v1/models` hanya menampilkan model yang aktif dan provider-nya aktif.
+1. Provider-nya aktif
+2. Kunci API provider sudah diisi (provider tanpa kunci tidak bisa diaktifkan)
+3. Modelnya aktif (centang Aktif dan tampil di katalog)
+4. Harga input atau output lebih besar dari nol
+
+`GET /v1/models` hanya menampilkan model yang aktif dan provider-nya aktif. Panel admin menampilkan
+status per model beserta alasannya kalau belum tampil, dan kartu Checklist di ringkasan admin
+menghitung berapa yang belum siap.
 
 ## Struktur
 

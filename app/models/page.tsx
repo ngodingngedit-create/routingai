@@ -47,8 +47,8 @@ export default async function ModelsPage() {
       ) : (
         <div className="mt-8 rounded-[10px] border border-line bg-surface">
           <EmptyState
-            title="Katalog masih kosong"
-            description="Belum ada model yang aktif. Admin perlu mengisi harga dan mengaktifkan model sebelum katalog ini terisi."
+            title="Belum ada model yang bisa dilayani"
+            description="Model harus aktif, punya harga, dan provider-nya harus aktif dengan kunci API terisi. Katalog terisi sendiri setelah syarat itu terpenuhi."
             action={
               <Link href="/docs" className={buttonClass("outline", "sm")}>
                 Lihat cara memakai kunci
